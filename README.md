@@ -8,7 +8,7 @@ Yin es el motor de audio complementario de **[Yang Player](https://github.com/zX
 
 ## Así se ve
 
-Capturas reales del panel en un LG V60.
+Capturas reales del panel.
 
 <table><tr><th>Sonido</th><th>Ruta de audio</th><th>Configuración</th></tr>
 <tr><td><img src="docs/screenshots/sound.png" width="240" alt="Panel de sonido de Yin"></td><td><img src="docs/screenshots/route.png" width="240" alt="Ruta de audio en Yin"></td><td><img src="docs/screenshots/configuration.png" width="240" alt="Configuración de Yin"></td></tr></table>
