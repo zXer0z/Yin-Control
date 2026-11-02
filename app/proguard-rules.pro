@@ -1,0 +1,8 @@
+-keep class local.v60.player.DirectModule { *; }
+-keep class local.v60.player.DirectOutput { *; }
+-keep class local.v60.player.DacGainCommand { *; }
+-keep class local.v60.player.BluetoothCodecCommand { *; }
+-keep class com.arthenica.ffmpegkit.** { *; }
+-keep class com.arthenica.smartexception.** { *; }
+-dontwarn de.robv.android.xposed.**
+-dontwarn com.arthenica.**

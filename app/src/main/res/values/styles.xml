@@ -1,0 +1,27 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:colorAccent">#A1E5CF</item>
+        <item name="android:statusBarColor">#0B0E13</item>
+        <item name="android:navigationBarColor">#0B0E13</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:windowBackground">#0B0E13</item>
+    </style>
+    <style name="AppFullScreenDialog" parent="AppTheme">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+    </style>
+    <style name="PlayerSheetDialog" parent="AppFullScreenDialog">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

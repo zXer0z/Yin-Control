@@ -1,0 +1,22 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <queries><package android:name="com.yang.player" /><intent><action android:name="android.bluetooth.IBluetoothA2dp" /></intent></queries>
+    <application android:label="Yin Control" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@style/AppTheme" android:allowBackup="false" android:extractNativeLibs="true" android:supportsRtl="true">
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposedminversion" android:value="93" />
+        <meta-data android:name="xposeddescription" android:value="Yin Control: motor de audio root para Yang. Alcance: solo esta app." />
+        <provider android:name=".BluetoothBinderProvider" android:authorities="local.v60.player.bluetooth.root" android:exported="true" android:permission="android.permission.DUMP" />
+        <service android:name=".YinService" android:exported="true" android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaPlayback">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Persistent user-enabled root audio broker for Yang Player; idle until an authenticated PCM session is opened." />
+        </service>
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+            <intent-filter><action android:name="android.intent.action.APPLICATION_PREFERENCES" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+        </activity>
+    </application>
+</manifest>
