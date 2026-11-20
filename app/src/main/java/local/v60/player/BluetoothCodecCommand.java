@@ -30,7 +30,7 @@ public final class BluetoothCodecCommand {
     static int bestRate(int mask){for(int bit:new int[]{8,4,2,1})if((mask&bit)!=0)return bit;return 0;}
     static IBinder bridge(Context context)throws Exception{
         Object manager=Class.forName("android.app.ActivityManager").getMethod("getService").invoke(null);Class<?> api=Class.forName("android.app.IActivityManager");IBinder token=new Binder();String authority="local.v60.player.bluetooth.root";Object holder=null;
-        for(Method method:api.getMethods())if(method.getName().equals("getContentProviderExternal")&&method.getParameterCount()==4){holder=method.invoke(manager,authority,0,token,"ZeroMusicBluetooth");break;}
+        for(Method method:api.getMethods())if(method.getName().equals("getContentProviderExternal")&&method.getParameterCount()==4){holder=method.invoke(manager,authority,0,token,"YinControlBluetooth");break;}
         if(holder==null)throw new IllegalStateException("No se pudo abrir el puente Bluetooth de la app");
         try{
             Object provider=holder.getClass().getField("provider").get(holder);Object result=null;

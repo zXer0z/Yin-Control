@@ -158,17 +158,19 @@ public final class AudioSettings {
         }
         double maximum=0;boolean equalizing=false;
         if(eq)for(int i=0;i<10;i++)if(dsp.applies(i,channels)&&dsp.frequency(i)<outputRate/2&&dsp.gain(i,gains[i])!=0){maximum=Math.max(maximum,dsp.gain(i,gains[i]));equalizing=true;}
-        plan.headroomDb=headroom?((eq?maximum:0)+(dsp.bass?dsp.bassGain:0)+(dsp.convolver?3:0)+(dsp.channelsEnabled?Math.max(0,Math.max(dsp.leftGain,dsp.rightGain)):0)):0;plan.equalizing=equalizing;
+        plan.headroomDb=headroom?((eq?maximum:0)+(dsp.bass?dsp.bassGain*0.85:0)+(dsp.clarity?dsp.clarityAmount*0.45:0)+(dsp.convolver?3:0)+(dsp.channelsEnabled?Math.max(0,Math.max(dsp.leftGain,dsp.rightGain)):0)):0;plan.equalizing=equalizing;
         plan.gainDb=preamp+dsp.preampFraction+rg-plan.headroomDb;
         // Attenuate before EQ so positive bands have headroom in floating point.
         if(Math.abs(plan.gainDb)>.00001)filters.add("volume="+decimal(plan.gainDb)+"dB:precision=double");
-        boolean headphones=!"speaker".equals(profile);List<String> tail=new ArrayList<>(),current=filters;List<String> active=new ArrayList<>();
-        for(String stage:dsp.order){if(stage.equals("convolver")){current=tail;if(dsp.convolver)active.add(DspSettings.name(stage));continue;}int before=current.size();if(stage.equals("eq")){if(eq)for(int i=0;i<10;i++)if(dsp.applies(i,channels)&&dsp.frequency(i)<outputRate/2&&dsp.gain(i,gains[i])!=0)current.add(dsp.eqFilter(i,dsp.gain(i,gains[i]),channels));}else dsp.stage(stage,current,outputRate,channels,headphones);if(current.size()>before)active.add(DspSettings.name(stage));}plan.effects=active.isEmpty()?"Sin efectos adicionales":String.join(" → ",active);
-        if(dsp.protection&&dsp.outputTrim<0)tail.add("volume="+dsp.outputTrim+"dB:precision=double");
+        boolean headphones=!"speaker".equals(profile);List<String> tail=new ArrayList<>();List<String> active=new ArrayList<>();
+        if(dsp.convolver)active.add("Impulso IR");
+        if(eq){int beforeEq=tail.size();for(int i=0;i<10;i++)if(dsp.applies(i,channels)&&dsp.frequency(i)<outputRate/2&&dsp.gain(i,gains[i])!=0)tail.add(dsp.eqFilter(i,dsp.gain(i,gains[i]),channels));if(tail.size()>beforeEq)active.add("Ecualizador");}
+        dsp.appendStages(tail,active,outputRate,channels,headphones);
+        plan.effects=active.isEmpty()?"Sin efectos adicionales":String.join(" → ",active);
         if(channels==2&&balance!=0){double left=balance>0?1-balance/100.0:1,right=balance<0?1+balance/100.0:1;
             tail.add("pan=stereo|c0="+decimal(left)+"*c0|c1="+decimal(right)+"*c1");}
-        plan.limiting=dsp.protection||(limiter&&(equalizing||dsp.convolver||dsp.channelsEnabled||dsp.active(headphones,channels)||Math.abs(plan.gainDb)>.00001||(channels==2&&balance!=0)));
-        if(plan.limiting)tail.add("alimiter=limit="+(dsp.protection?DspSettings.decimal(Math.pow(10,dsp.ceiling/20.0)):"0.95")+":level=0:attack=5:release=50:latency=1");
+        plan.limiting=limiter&&(equalizing||dsp.convolver||dsp.channelsEnabled||dsp.active(headphones,channels)||Math.abs(plan.gainDb)>.00001||(channels==2&&balance!=0));
+        if(plan.limiting)tail.add("alimiter=limit="+DspSettings.decimal(Math.pow(10,dsp.ceiling/20.0))+":level=0:attack=5:release=50:latency=1");
         plan.beforeIr=String.join(",",filters);plan.afterIr=String.join(",",tail);filters.addAll(tail);plan.filter=String.join(",",filters);return plan;
     }
     private static String tag(JSONObject a,JSONObject b,String name){for(JSONObject object:new JSONObject[]{a,b})if(object!=null){Iterator<String> keys=object.keys();while(keys.hasNext()){String key=keys.next();if(key.equalsIgnoreCase(name))return object.optString(key,null);}}return null;}

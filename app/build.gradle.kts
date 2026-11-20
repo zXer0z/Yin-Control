@@ -23,8 +23,8 @@ android {
         applicationId = "local.v60.player"
         minSdk = 31
         targetSdk = 36
-        versionCode = 144
-        versionName = "3.0.0-yin"
+        versionCode = 148
+        versionName = "3.4.0-yin"
         ndk { abiFilters += "arm64-v8a" }
         val yangCert = providers.gradleProperty("yangCertSha256").orNull ?: debugCertificateSha256()
         require(yangCert.matches(Regex("[a-fA-F0-9]{64}"))) { "Invalid yangCertSha256" }

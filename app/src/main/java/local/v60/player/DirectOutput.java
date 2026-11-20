@@ -45,7 +45,7 @@ public final class DirectOutput {
         if(!bluetooth&&!"wired".equals(settings.profile))throw new IOException("La salida directa experimental solo admite Jack / AUX y Bluetooth.");
         if(bluetooth&&(rate!=96000||(settings.encoding!=2&&settings.encoding!=3)))throw new IOException("Bluetooth directo experimental requiere 96 kHz y PCM entero de 24 o 32 bits.");
         if(settings.encoding==0)throw new IOException("La salida directa requiere PCM entero de 16, 24 o 32 bits.");
-        if(!available()||!(rate>192000?highRateAvailable()&&beginPcmRate(rate):beginNative()))throw new IOException("Activa Zero Music en LSPosed con alcance Zero Music y vuelve a abrir la app. Bluetooth directo necesita además la política root BT96.");
+        if(!available()||!(rate>192000?highRateAvailable()&&beginPcmRate(rate):beginNative()))throw new IOException("Activa Yin Control en LSPosed con alcance Yin Control y vuelve a abrir la app. Bluetooth directo necesita además la política root BT96.");
         AudioTrack track;
         try{track=builder.build();}finally{endNative();}
         int flags;

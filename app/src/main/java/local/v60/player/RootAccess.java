@@ -23,14 +23,14 @@ final class RootAccess {
     static synchronized String run(String command,int seconds)throws Exception{
         if(Looper.myLooper()==Looper.getMainLooper())throw new IllegalStateException("La consulta avanzada debe ejecutarse en segundo plano");
         java.lang.Process process;
-        try{process=new ProcessBuilder("su","-c","if [ \"$(/system/bin/id -u)\" != 0 ]; then exit 77; fi; printf 'ZERO_ROOT_OK\\n'; "+command).redirectErrorStream(true).start();}
+        try{process=new ProcessBuilder("su","-c","if [ \"$(/system/bin/id -u)\" != 0 ]; then exit 77; fi; printf 'YIN_ROOT_OK\\n'; "+command).redirectErrorStream(true).start();}
         catch(IOException missing){state=State.UNAVAILABLE;throw new IOException("Acceso root no disponible para la app. Se conservan las funciones normales.");}
         ByteArrayOutputStream bytes=new ByteArrayOutputStream();AtomicReference<Exception> failure=new AtomicReference<>();
         Thread reader=new Thread(()->{try(InputStream input=process.getInputStream()){byte[] buffer=new byte[8192];int count;while((count=input.read(buffer))!=-1){if(bytes.size()+count>2*1024*1024)throw new IOException("La consulta excedió el límite de lectura");bytes.write(buffer,0,count);}}catch(Exception error){failure.set(error);}},"OptionalRootRead");reader.setDaemon(true);reader.start();
         try{
             if(!process.waitFor(seconds,TimeUnit.SECONDS)){state=State.DENIED;throw new IOException("Acceso root sin confirmar. La consulta normal sigue disponible.");}
             reader.join(1500);if(reader.isAlive())throw new IOException("La consulta no terminó de leerse");if(failure.get()!=null)throw failure.get();
-            String output=bytes.toString("UTF-8");String marker="ZERO_ROOT_OK\n";int start=output.indexOf(marker);
+            String output=bytes.toString("UTF-8");String marker="YIN_ROOT_OK\n";int start=output.indexOf(marker);
             if(start<0){state=State.DENIED;throw new IOException("Root no autorizado para esta consulta. Se muestran solo los datos disponibles.");}
             state=State.GRANTED;if(process.exitValue()!=0)throw new IOException("Android no permitió completar esta consulta avanzada.");return output.substring(start+marker.length());
         }finally{process.destroy();}

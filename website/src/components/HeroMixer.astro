@@ -1,0 +1,195 @@
+---
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="reveal">
+      <div class="chip-strip">
+        <span class="led-chip">
+          <span class="led-dot pulse" style="--dot-color: var(--led-green)"></span>
+          v3.4.0-yin · ACTIVO
+        </span>
+        <span class="led-chip">
+          <span class="led-dot" style="--dot-color: var(--led-cyan)"></span>
+          LG V60 · ESS QUAD DAC
+        </span>
+        <span class="led-chip">
+          <span class="led-dot" style="--dot-color: var(--led-amber)"></span>
+          FFMPEG f64 DSP
+        </span>
+      </div>
+
+      <h1 class="hero-headline">
+        El motor <span class="accent-grad">detrás del sonido.</span>
+      </h1>
+
+      <p class="hero-lead">
+        Consola DSP hardware y puente de audio root de baja latencia para <strong>Yang Player</strong>.
+        Ecualizador RBJ de 10 bandas, convolver FIR, <strong>Sound Color FX</strong>, Differential Surround Haas
+        y control directo del <strong>Quad DAC ESS ES9219</strong> y códec <strong>LDAC 96 kHz</strong>.
+      </p>
+
+      <div class="hero-cta-row">
+        <a class="btn-led" href="#consola">PROBAR CONSOLA MIXER</a>
+        <button id="hero-audio-btn" class="btn-hw" type="button">
+          ▶ ACTIVAR DEMO AUDIO EN VIVO
+        </button>
+        <a class="btn-hw" href="https://github.com/zXer0z/Yin-Control" target="_blank" rel="noreferrer">
+          VER CÓDIGO EN GITHUB
+        </a>
+      </div>
+
+      <div class="chip-strip" aria-label="Capacidades verificadas">
+        <span class="led-chip"><span class="led-dot" style="--dot-color: var(--led-green)"></span>ROOT · MAGISK</span>
+        <span class="led-chip"><span class="led-dot" style="--dot-color: var(--led-green)"></span>LSPOSED DIRECT</span>
+        <span class="led-chip"><span class="led-dot" style="--dot-color: var(--accent)"></span>BT · LDAC 96k/24b</span>
+        <span class="led-chip"><span class="led-dot" style="--dot-color: var(--led-blue)"></span>PUENTE SHA-256</span>
+      </div>
+    </div>
+
+    <div class="hw-rack orbital-deck reveal">
+      <div class="rack-head" style="margin-bottom: 0.4rem;">
+        <div>
+          <div class="rack-tag">00 // TELEMETRÍA EN VIVO</div>
+          <h2 class="rack-title">Puente Yang ⇄ Yin Control</h2>
+        </div>
+        <span class="led-chip" id="hero-status-chip">
+          <span class="led-dot pulse" style="--dot-color: var(--led-green)"></span>
+          <span id="hero-status-text">96k · 24b DIR</span>
+        </span>
+      </div>
+
+      <div class="orbital-stage">
+        <div class="orbit-ring r1"></div>
+        <div class="orbit-ring r2"></div>
+        <div class="orbit-core" id="hero-orbit-core">
+          <img src={`${base}assets/yin-mark.svg`} alt="Emblema Yin Control" />
+        </div>
+        <div class="orbit-telemetry">
+          <span>SOCK_PCM → FFMPEG_F64</span>
+          <span id="hero-route-label" style="color: var(--accent)">EDIFIER NeoBuds · LDAC</span>
+        </div>
+      </div>
+
+      <div class="oled-screen">
+        <div class="oled-kicker" style="margin-bottom: 0.55rem;">PUENTE DE VÚMETROS MASTER · PCM dBFS</div>
+        <div class="meter-bridge">
+          <div class="meter-row">
+            <span class="meter-label">IN</span>
+            <div class="meter-leds" id="vu-in"></div>
+            <span class="meter-db" id="vu-in-db">-8.6</span>
+          </div>
+          <div class="meter-row">
+            <span class="meter-label">OUT</span>
+            <div class="meter-leds" id="vu-out"></div>
+            <span class="meter-db" id="vu-out-db">-9.4</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pad-grid" style="grid-template-columns: repeat(4, 1fr);" id="hero-route-switcher">
+        <button class="pad-key" type="button" data-route="Altavoz · 48.0 kHz · 16b PCM" data-badge="48k · 16b STD" style="--pad-color: var(--accent)">
+          <span class="pad-title">ALTAVOZ</span>
+          <span class="pad-meta">48k · 16b</span>
+        </button>
+        <button class="pad-key" type="button" data-route="ESS ES9219 Quad DAC · Alta Imp." data-badge="384k · 32b DIR" style="--pad-color: var(--led-cyan)">
+          <span class="pad-title">JACK</span>
+          <span class="pad-meta">QUAD DAC</span>
+        </button>
+        <button class="pad-key active" type="button" data-route="EDIFIER NeoBuds · LDAC 96k" data-badge="96k · 24b DIR" style="--pad-color: var(--led-green)">
+          <span class="pad-title">BT LDAC</span>
+          <span class="pad-meta">EN USO</span>
+        </button>
+        <button class="pad-key" type="button" data-route="USB Audio Class 2.0 · Direct" data-badge="192k · 24b USB" style="--pad-color: var(--led-amber)">
+          <span class="pad-title">USB</span>
+          <span class="pad-meta">UAC 2.0</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { consoleState, sampleMeterDb, subscribeState, toggleDemoAudio } from '../scripts/yinEngine.js';
+
+  const vuIn = document.getElementById('vu-in');
+  const vuOut = document.getElementById('vu-out');
+  const vuInDb = document.getElementById('vu-in-db');
+  const vuOutDb = document.getElementById('vu-out-db');
+  const orbitCore = document.getElementById('hero-orbit-core');
+
+  const SEGMENTS = 28;
+  function buildLeds(container) {
+    if (!container) return [];
+    const list = [];
+    for (let i = 0; i < SEGMENTS; i++) {
+      const seg = document.createElement('span');
+      const zone = i >= 24 ? 'r' : i >= 19 ? 'a' : 'g';
+      seg.className = `meter-seg ${zone}`;
+      container.appendChild(seg);
+      list.push(seg);
+    }
+    return list;
+  }
+
+  const inSegs = buildLeds(vuIn);
+  const outSegs = buildLeds(vuOut);
+
+  function renderBar(segs, db) {
+    // Map -36 dBFS -> 0 segs, 0 dBFS -> 28 segs
+    const lit = Math.round(((db + 36) / 36) * SEGMENTS);
+    for (let i = 0; i < SEGMENTS; i++) {
+      segs[i].classList.toggle('on', i < lit);
+    }
+  }
+
+  let peakIn = -36;
+  let peakOut = -36;
+  function animateVu(nowMs) {
+    const t = nowMs * 0.001;
+    const { inDb, outDb, energy } = sampleMeterDb(t);
+    peakIn = inDb > peakIn ? inDb : peakIn * 0.92 + inDb * 0.08;
+    peakOut = outDb > peakOut ? outDb : peakOut * 0.92 + outDb * 0.08;
+
+    renderBar(inSegs, peakIn);
+    renderBar(outSegs, peakOut);
+    if (vuInDb) vuInDb.textContent = peakIn.toFixed(1);
+    if (vuOutDb) vuOutDb.textContent = peakOut.toFixed(1);
+
+    if (orbitCore) {
+      const scale = 1 + energy * 0.09;
+      orbitCore.style.transform = `scale(${scale.toFixed(3)})`;
+    }
+
+    window.dispatchEvent(new CustomEvent('yin-audio-energy', { detail: { energy } }));
+    requestAnimationFrame(animateVu);
+  }
+  requestAnimationFrame(animateVu);
+
+  // Route card switcher in Hero
+  const routeBtns = document.querySelectorAll('#hero-route-switcher button');
+  const routeLabel = document.getElementById('hero-route-label');
+  const statusText = document.getElementById('hero-status-text');
+  routeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      routeBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (routeLabel) routeLabel.textContent = btn.getAttribute('data-route') || '';
+      if (statusText) statusText.textContent = btn.getAttribute('data-badge') || '';
+    });
+  });
+
+  // Hero Audio toggle
+  const heroAudioBtn = document.getElementById('hero-audio-btn');
+  function syncAudioBtn() {
+    if (!heroAudioBtn) return;
+    heroAudioBtn.classList.toggle('playing', consoleState.playing);
+    heroAudioBtn.textContent = consoleState.playing
+      ? '■ DETENER AUDIO EN VIVO'
+      : '▶ ACTIVAR DEMO AUDIO EN VIVO';
+  }
+  heroAudioBtn?.addEventListener('click', () => toggleDemoAudio());
+  subscribeState(() => syncAudioBtn());
+</script>

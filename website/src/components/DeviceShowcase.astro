@@ -1,0 +1,184 @@
+---
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+
+const SCREENS = [
+  {
+    id: 'eq',
+    tab: '02 // EQ',
+    label: 'EQ · RBJ + Faders',
+    img: `${base}screenshots/eq.png`,
+    title: 'Curva RBJ analítica y 10 faders GainFader',
+    summary:
+      'Visualiza la suma biquad exacta entre 20 Hz y 20 kHz, cambia a modo paramétrico con frecuencia libre y Q 0,1–12, o importa archivos de corrección AutoEQ / Equalizer APO e impulsos WAV/IRS.',
+    chips: ['10 BANDAS ±12 dB', 'PK / LS / HS POR CANAL', 'CONVOLVER WAV/IRS'],
+  },
+  {
+    id: 'sound',
+    tab: '01 // SALIDA',
+    label: 'Salida · LDAC & DAC',
+    img: `${base}screenshots/sound.png`,
+    title: 'Perfiles por ruta, códec A2DP y Quad DAC ESS',
+    summary:
+      'Selector directo de Altavoz, Jack/AUX, Bluetooth y USB con auto-perfil SHA-256 por dispositivo. Control root de códecs Bluetooth (LDAC 96 kHz, aptX Adaptive, aptX, SBC) y modo PCM Directo.',
+    chips: ['LDAC 96k/24b', 'ESS QUAD DAC GAIN', 'AUTO-PERFIL SHA-256'],
+  },
+  {
+    id: 'sound-output',
+    tab: '01B // MOTOR',
+    label: 'Motor · Frec. & Búfer',
+    img: `${base}screenshots/sound-output.png`,
+    title: 'Negociación AudioTrack vs PCM Directo',
+    summary:
+      'Configura frecuencia (44.1 a 384 kHz en Jack), profundidad de bits (16/24/32/Float32), búfer (25–400 ms) y motor de remuestreo SWR o SoXR sin abrir diálogos emergentes.',
+    chips: ['SWR / SOXR', '44.1–384 kHz', 'BÚFER CONFIGURABLE'],
+  },
+  {
+    id: 'dynamics',
+    tab: '03 // DINÁMICA',
+    label: 'Sound Color FX',
+    img: `${base}screenshots/dynamics.png`,
+    title: 'Pads Sound Color FX, Sub-Woofer y Calidez 2×',
+    summary:
+      'Seis pads maestros iluminados por barra LED junto al fader lineal de preamplificador, Headroom automático, limitador de picos digitales (-12 a -1 dBFS), Claridad y Compresor RMS.',
+    chips: ['SOUND COLOR FX', 'SUB-WOOFER ASUBBOOST', 'SOFT-CLIP 2×'],
+  },
+  {
+    id: 'space',
+    tab: '04 // ESPACIO',
+    label: 'Haas & Cure Tech+',
+    img: `${base}screenshots/space.png`,
+    title: 'Crossfader Magvel, Cure Tech+ y Haas',
+    summary:
+      'Panorama L/R de precisión, Protección Auditiva Binaural (Leve/Medio/Fuerte), Differential Surround con retardo 1–25 ms + Reverse + LP Cutoff, expansión Mid/Side y calibración por oído.',
+    chips: ['CURE TECH+ BINAURAL', 'DIFFERENTIAL HAAS', 'CALIBRACIÓN L/R'],
+  },
+  {
+    id: 'route',
+    tab: '05 // RUTA',
+    label: 'Telemetría HAL',
+    img: `${base}screenshots/route.png`,
+    title: 'Auditoria extremo a extremo hasta AudioFlinger',
+    summary:
+      'Inspección sincronizada desde el decodificador de Yang (DSP YANG: BYPASS) hasta el socket PCM, AudioTrack abierto (FLAGS 0x1 · DIRECT) y consulta bajo demanda de AudioFlinger y ALSA hw_params.',
+    chips: ['FLAGS 0x1 · DIRECT', 'AUDIOFLINGER DUMP', '/PROC/ASOUND'],
+  },
+  {
+    id: 'configuration',
+    tab: '06 // SISTEMA',
+    label: 'Chasis & Root',
+    img: `${base}screenshots/configuration.png`,
+    title: 'Seis paletas OLED, diagnóstico y service.d',
+    summary:
+      'Paletas Menta, Cian, Ámbar, Lavanda, Coral y Titanio; verificación en vivo de Root, LSPosed y ROM V60; supervisor Magisk service.d sin wakelock permanente.',
+    chips: ['6 PALETAS OLED', 'LSPOSED ACTIVO', 'SERVICE.D ZERO-WAKELOCK'],
+  },
+];
+---
+<section class="section" id="hardware">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-kicker">03 // HARDWARE REAL · LG V60 THINQ</div>
+      <h2 class="section-title">Captura directa desde la pantalla del teléfono.</h2>
+      <p class="section-desc">
+        Sin renders ficticios. Explora cada una de las seis pestañas reales de <strong>Yin Control 3.4.0-yin (148)</strong>
+        mientras procesa música desde Yang Player sobre <strong>LDAC 96 kHz / 24-bit DIRECT</strong>.
+      </p>
+    </div>
+
+    <div class="device-grid">
+      <div class="reveal">
+        <div class="phone-bezel">
+          <div class="phone-screen">
+            <img
+              id="v60-screen-img"
+              src={SCREENS[0].img}
+              alt="Captura real de Yin Control en LG V60 ThinQ"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="hw-rack reveal">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag" id="v60-tab-code">{SCREENS[0].tab}</div>
+            <h3 class="rack-title" id="v60-tab-title">{SCREENS[0].title}</h3>
+          </div>
+        </div>
+
+        <div class="tab-selector-grid" id="v60-tab-buttons">
+          {SCREENS.map((item, idx) => (
+            <button
+              class={`pad-key ${idx === 0 ? 'active' : ''}`}
+              type="button"
+              data-idx={idx}
+              style="--pad-color: var(--accent)"
+            >
+              <span class="pad-title">{item.tab}</span>
+              <span class="pad-meta">{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div class="oled-screen" style="margin-bottom: 1rem;">
+          <div class="oled-kicker" style="margin-bottom: 0.35rem;">DESCRIPCIÓN DEL MÓDULO</div>
+          <p id="v60-tab-summary" style="margin: 0; font-size: 0.92rem; color: var(--sub);">
+            {SCREENS[0].summary}
+          </p>
+        </div>
+
+        <div class="chip-strip" id="v60-tab-chips">
+          {SCREENS[0].chips.map((c) => (
+            <span class="led-chip">
+              <span class="led-dot" style="--dot-color: var(--accent)"></span>
+              {c}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ SCREENS }}>
+  const img = document.getElementById('v60-screen-img');
+  const code = document.getElementById('v60-tab-code');
+  const title = document.getElementById('v60-tab-title');
+  const summary = document.getElementById('v60-tab-summary');
+  const chipsWrap = document.getElementById('v60-tab-chips');
+  const btns = document.querySelectorAll('#v60-tab-buttons button');
+
+  btns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.getAttribute('data-idx'));
+      const item = SCREENS[idx];
+      if (!item) return;
+
+      btns.forEach((b) => b.classList.toggle('active', b === btn));
+      if (img) {
+        img.style.opacity = '0.35';
+        img.style.transform = 'scale(0.985)';
+        setTimeout(() => {
+          img.src = item.img;
+          img.alt = item.title;
+          img.style.opacity = '1';
+          img.style.transform = 'scale(1)';
+        }, 120);
+      }
+      if (code) code.textContent = item.tab;
+      if (title) title.textContent = item.title;
+      if (summary) summary.textContent = item.summary;
+      if (chipsWrap) {
+        chipsWrap.innerHTML = item.chips
+          .map(
+            (c) =>
+              `<span class="led-chip"><span class="led-dot" style="--dot-color: var(--accent)"></span>${c}</span>`
+          )
+          .join('');
+      }
+    });
+  });
+</script>

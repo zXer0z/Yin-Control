@@ -1,95 +1,44 @@
-# DSP de Yin para el audio de Yang
+# DSP de Yin Control (v3.4.0-yin) para el audio de Yang
 
-Los efectos nuevos están desactivados por defecto. No se instala un módulo global,
-no se modifica audioserver ni el kernel. El audio sigue entrando por el puente PCM
-autenticado de Yang; FFmpegKit procesa el grafo y Yin conserva su AudioTrack.
+Todos los efectos se inician limpios en el perfil por defecto (`PURE HI-FI`), sin instalar módulos globales del sistema ni alterar `audioserver` o el kernel. El audio PCM decodificado entra desde Yang Player a través del puente autenticado, atraviesa el grafo FFmpeg `f64` dentro de `YinService` y sale por `PcmOutput` (`AudioTrack` / `PCM DIRECT`).
 
-## Controles
+## Controles y módulos de la consola
 
-- EQ: diez bandas gráficas o paramétricas, frecuencia 20–20000 Hz, Q 0,1–12,
-  campana/estantería de graves/estantería de agudos. Barras gráficas en pasos de
-  1 dB; editor paramétrico en pasos de 0,1 dB y Q de 0,01. Diez bandas visibles
-  en dos filas y separación entre tipos de filtro/importación.
-- Correcciones: importación local de texto AutoEQ/Equalizer APO, hasta diez filtros
-  ON PK/LS/LSC/HS/HSC con Fc/Gain/Q y preamplificador. Rechaza filtros ON no
-  compatibles en lugar de aplicar un preset parcial. Conserva decimales de
-  ganancia, Q y preamplificador; acepta signos + y -. Perfiles antiguos de
-  ganancias enteras se migran al cargar, sin perder sus ajustes.
-- Convolver: WAV o IRS que contenga WAV, mono/estéreo, hasta 2 s, 16 MB y 384 kHz.
-  Se copia a almacenamiento privado y convierte a WAV float con nombre único.
-  No se sobrescribe un IR que una sesión anterior pueda estar leyendo.
-- Graves dinámicos: filtro dinámico de estantería, boostbelow/adaptive, máximo
-  configurable, con reserva de margen al activar headroom.
-- Compresor: umbral, ratio, ataque y recuperación; sin makeup automático.
-- Crossfeed: mezcla estéreo filtrada con intensidad ajustable.
-- Surround diferencial: efecto Haas con retardo de 1–25 ms e intensidad; no es
-  una reproducción del algoritmo propietario de ViPER.
-- Antifatiga: atenuación ancha configurable entre 2–6 kHz y estantería suave de
-  agudos desde 7,5 kHz. Es un ajuste tonal estático de comodidad, no detección de
-  frecuencias dañinas ni una garantía de protección auditiva.
-- Control de picos: techo de -18 a -1 dBFS y atenuación adicional. El limitador
-  es de picos digitales, no un limitador true-peak con sobremuestreo ni un medidor
-  de presión sonora. No calcula exposición acústica ni promete un volumen seguro.
+- **SOUND COLOR FX (6 pads maestros):** `PURE HI-FI`, `BASS CLUB`, `VOCAL STUDIO`, `3D STAGE`, `TUBE WARMTH` y `NIGHT LOUNGE`. Cada pad sincroniza instantáneamente EQ, dinámica, calidez y escena espacial con estado reflejado en la pantalla OLED superior (`YinStudioControls`).
+- **EQ de 10 bandas (`EqResponseView` + `GainFader`):** faders verticales lineales de `±12 dB` (`31 Hz` a `16 kHz`) y curva analítica RBJ interactiva con puntos seleccionables en escala logarítmica. Modo paramétrico con frecuencia `20–20 000 Hz`, factor `Q 0,10–12,00`, filtros campana (`PK`), estantería de graves (`LS`) y estantería de agudos (`HS`), aplicables al canal Izquierdo, Derecho o Ambos.
+- **Importación AutoEQ / Equalizer APO:** parser local de texto hasta diez filtros `ON PK/LS/LSC/HS/HSC` con ganancia decimal, `Q` y preamplificador (`EffectImports`). Rechaza filtros incompatibles para evitar presets parciales.
+- **Convolver IR (`afir`):** carga local de respuestas al impulso `.wav` o `.irs` (mono/estéreo, hasta `2 s`, `16 MB` y `384 kHz`), normalizadas en almacenamiento privado como WAV flotante con nombre único y controles de mezcla (`0–100%`) y ganancia (`-24..0 dB`).
+- **Graves y Sub-Woofer:**
+  - `Natural`: estantería de graves `f64`.
+  - `Sub-Woofer`: sintetizador subarmónico `asubboost` (`cutoff >= 50 Hz`, `dry/wet`, realimentación) combinado con estantería suave.
+  - `Dinámico`: `adynamicequalizer` en modo `boostbelow` adaptativo (`auto=adaptive`, ataque `15 ms`, recuperación `180 ms`).
+- **Claridad y Detalle:** tres modos calibrados (`Armónico` con `crystalizer`, `Presencia` de agudos a `6,5 kHz` e `Híbrido`).
+- **Calidez Analógica (`asoftclip` 2×):** saturación soft-clip seleccionable entre `Válvula (tanh)`, `Cinta (atan)` y `Clase A (cubic)` con sobremuestreo `2×`.
+- **Compresor dinámico (`acompressor`):** detección RMS (`Suave 2:1`, `Estudio 3:1`, `Noche 6:1` o ajuste libre de umbral `-40..-6 dBFS`, relación `1..10:1`, ataque `1..100 ms` y recuperación `40..1000 ms`).
+- **Protección Auditiva Binaural (Crossfeed Cure Tech+):** presets calibrados `Leve (700 Hz · 45%)`, `Medio (700 Hz · 60%)` y `Fuerte (650 Hz · 95%)`, o ajuste fino (`300–1200 Hz`, `20–95%`) combinando el filtro `crossfeed` y mezcla `pan` frontal para reducir la fatiga auditiva en auriculares.
+- **Differential Surround (Efecto Haas):** retardo interaural `1–25 ms` mediante `adelay` + `haas`, selector de inversión (`Derecho retardado` / `Izquierdo Reverse`), mezcla `Wet/Dry 10–100%` y atenuación pasa-bajos en el canal retardado (`1,5–16 kHz`) para proyectar la escena fuera de la cabeza.
+- **Panorama Magvel, Escena Estéreo y Calibración L/R:** balance estéreo, expansión Mid/Side (`extrastereo 110–200%`) y trim de ganancia (`-24..+6 dB`) y micro-retardo (`0–20 ms`) independiente por oído.
+- **Control de picos (`alimiter`):** preamplificador maestro, reserva automática de margen (`Headroom`) y techo limitador configurable de `-12` a `-1 dBFS`.
 
-Los efectos de auriculares se omiten en altavoz; los efectos estéreo se omiten
-con un único canal. Espacio muestra claramente esta condición.
+> Los efectos exclusivos de auriculares (`Protección binaural`, `Differential Surround` y `Escena estéreo`) se omiten automáticamente en altavoz o señal mono.
 
-## Grafo y estado
+## Orden del grafo DSP
 
-Adaptación de frecuencia → preamplificador/margen → etapas en el orden guardado
-(IR, EQ, graves, espacio, compresor y canales) → atenuación/balance → limitador.
-La convolución utiliza split, afir particionado y mezcla seca/procesada; las etapas
-anteriores y posteriores al IR respetan su posición real. Sin IR se usa -af.
-El remuestreo respeta SWR/SoXR. Mezcla IR cero omite la convolución.
+```text
+Adaptación de frecuencia (SWR/SoXR)
+  → Preamplificador / Headroom
+  → Ecualizador de 10 bandas (Gráfico / Paramétrico L/R)
+  → Convolver IR (si irMix > 0)
+  → Graves / Sub-Woofer / Dinámico
+  → Claridad → Compresor → Calidez Analógica
+  → Protección Binaural (Cure) → Differential Surround (Haas) → Escena Estéreo
+  → Calibración L/R + Balance
+  → Limitador de picos digitales
+```
 
-Las preferencias nuevas están dentro del JSON del perfil. «Perfil automático por
-dispositivo» es opt-in: clave local derivada de tipo/dirección/nombre con SHA-256;
-hereda el perfil de conexión hasta guardar sus propios ajustes. No distingue dos
-auriculares pasivos conectados al mismo jack si Android no expone su identidad.
-Los callbacks de dispositivos invalidan la sesión únicamente cuando cambia la
-clave efectiva o el contenido del perfil; se conserva el debounce de 400 ms.
+## Perfiles, telemetría y sistema
 
-## Validación de entrega
-
-Compilación release con R8 y lint vital. Inspección estática de la biblioteca
-incluida para confirmar presencia de los filtros y opciones usados; API Java
-FFprobe verificada con javap. No se ejecutaron pruebas automatizadas ni de escucha
-por preferencia de AGENTS.md; importación de archivos y efectos quedan para la
-comprobación funcional del usuario en el teléfono.
-
-Fuentes de diseño:
-- https://ffmpeg.org/ffmpeg-filters.html
-- https://github.com/FFmpeg/FFmpeg/tree/n8.0/libavfilter
-- https://github.com/likelikeslike/ViPER4Android (Cure descrito como crossfeed)
-- https://www.who.int/news-room/questions-and-answers/item/deafness-and-hearing-loss-safe-listening
-
-## Estudio y configuración
-
-- Curva analítica RBJ del EQ: dos canales, puntos seleccionables, escala logarítmica.
-  Usa la frecuencia de la sesión del mismo perfil o la seleccionada (48 kHz de
-  referencia si es automática sin sesión). Omite filtros por encima de Nyquist.
-  No mide auriculares ni incluye IR, preamp u otros efectos. Apagado conserva la
-  curva guardada en gris y bloquea los faders gráficos.
-- Medidores PCM RMS/pico antes y después del DSP. Ventanas de 100 ms y visualización
-  aproximada de 400 ms, actualización UI de 200 ms. No son SPL ni exposición auditiva.
-- A/B guarda solo ajustes de sonido, sin cambiar backend/formato. Estima ganancia
-  salida/entrada con 5 s de señal alineados por tiempo de muestras. Es aproximado,
-  no LUFS ni loudness perceptual: conviene comparar el mismo fragmento. Solo atenúa
-  el ajuste de mayor nivel; cambio gradual hasta 1 dB cada 500 ms. Editar un ajuste
-  fuera de las instantáneas suspende la igualación hasta guardarlo de nuevo.
-- Cadena por perfil: arrastrar una fila o flechas; apagar conserva posición.
-  Preamplificador primero y limitador último no se reordenan.
-- Paramétrico: destino izquierdo/derecho/ambos por banda. Etapa de canales:
-  ganancias -24 a +6 dB y retardos 0–20 ms por canal, solo estéreo.
-- Config: seis paletas que derivan fondo, tarjetas, bordes, botones, selección,
-  faders e interruptores del acento. Pantalla encendida solo con el panel visible.
-  Restablecer requiere segundo toque y borra todos los perfiles y A/B; conserva
-  preferencias visuales, biblioteca y archivos originales. No cambia modo físico
-  del DAC ni códec Bluetooth del sistema.
-- Supervisor root opcional en service.d: espera boot_completed, lock exclusivo,
-  revisa proceso y servicio cada 60 s y solicita arranque si falta. El motor DSP
-  sigue siendo un servicio Android autenticado, no un proceso nativo independiente.
-  La actualización del supervisor se instala al abrir Yin activo o activar el motor.
-
-Entrega: compilación release R8 y lint vital, instalación por adb. Sin pruebas
-funcionales ni de escucha, según preferencia del usuario.
+- **Auto-perfil por dispositivo:** opcional (`opt-in`), genera clave SHA-256 local a partir de tipo, dirección y nombre del dispositivo expuesto por Android, heredando inicialmente la configuración de su conexión (`Altavoz`, `AUX/Jack`, `BT` o `USB`).
+- **Medidores PCM (`SignalMeterView` / `PcmMeter`):** puente de 28 LEDs (`Verde → Ámbar → Rojo`) en cabecera y medidores en tiempo real de entrada y salida en `dBFS`. Son mediciones digitales PCM, no un sonómetro SPL ni cálculo de dosis acústica.
+- **Apariencia OLED (`YinConfigPage`):** 6 colores de acento (`Menta`, `Cian`, `Ámbar`, `Lavanda`, `Coral`, `Titanio`) que tiñen LEDs, bordes activos, faders, pantallas y acentos del chasis.
+- **Supervisor root opcional (`service.d`):** script Magisk ligero que espera `sys.boot_completed=1` y verifica cada `60 s` la disponibilidad de Yin sin sostener wakelocks permanentes.

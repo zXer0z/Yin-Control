@@ -1,0 +1,174 @@
+---
+import '@fontsource-variable/space-grotesk';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/mixer.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Yin Control 3.4.0-yin · Consola Hardware DSP & Motor de Audio Root',
+  description = 'Motor de audio root y consola estilo mixer DJM para Yang Player en LG V60 ThinQ: EQ RBJ 10 bandas, Convolver IR, Sound Color FX, Differential Surround y Quad DAC ESS.',
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#080a0d" />
+    <link rel="icon" type="image/svg+xml" href={`${base}assets/yin-icon.svg`} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${base}assets/yang-yin-branding.png`} />
+  </head>
+  <body>
+    <canvas id="signal-backdrop" aria-hidden="true"></canvas>
+    <div class="scanline-overlay" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href={base}>
+          <span class="brand-mark">
+            <img src={`${base}assets/yin-icon.svg`} alt="Logo Yin Control" />
+          </span>
+          <span>
+            <span class="brand-title">YIN CONTROL</span>
+            <span class="brand-sub">DSP CONSOLE · v3.4.0-yin</span>
+          </span>
+        </a>
+
+        <nav class="nav" aria-label="Secciones">
+          <a href="#consola">CONSOLA EQ</a>
+          <a href="#espacio">HAAS &amp; BINAURAL</a>
+          <a href="#hardware">LG V60 REAL</a>
+          <a href="#arquitectura">ARQUITECTURA</a>
+          <a href="#compilar">COMPILAR</a>
+        </nav>
+
+        <div class="topbar-actions">
+          <a class="btn-hw" href="https://github.com/zXer0z/Yang-Player" target="_blank" rel="noreferrer">
+            YANG PLAYER
+          </a>
+          <a class="btn-led" href="https://github.com/zXer0z/Yin-Control" target="_blank" rel="noreferrer">
+            GITHUB REPO
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div>
+          <strong style="color: var(--ink)">Yin Control</strong> · Motor complementario DSP/DAC para
+          <a href="https://github.com/zXer0z/Yang-Player" style="color: var(--accent); text-decoration: none;">Yang Player</a>
+          (LG V60 ThinQ · ARM64 · Root / LSPosed).
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.76rem;">
+          Los medidores PCM representan niveles digitales (dBFS), no presión sonora SPL.
+        </div>
+      </div>
+    </footer>
+
+    <script is:inline>
+      (() => {
+        // Spotlight tracking on hardware racks
+        document.addEventListener('pointermove', (e) => {
+          document.querySelectorAll('.hw-rack').forEach((card) => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+            card.style.setProperty('--my', `${e.clientY - rect.top}px`);
+          });
+        }, { passive: true });
+
+        // Scroll Reveal Observer
+        const io = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              io.unobserve(entry.target);
+            }
+          }
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+        // Ambient signal harmonic lattice backdrop
+        const canvas = document.getElementById('signal-backdrop');
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        let w = 0, h = 0, t = 0;
+        let pointerX = 0.5, pointerY = 0.35;
+        let audioPulse = 0;
+
+        window.addEventListener('yin-audio-energy', (ev) => {
+          audioPulse = ev.detail?.energy || 0;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+          pointerX = e.clientX / Math.max(1, window.innerWidth);
+          pointerY = e.clientY / Math.max(1, window.innerHeight);
+        }, { passive: true });
+
+        function resize() {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          w = window.innerWidth;
+          h = window.innerHeight;
+          canvas.width = w * dpr;
+          canvas.height = h * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resize();
+        window.addEventListener('resize', resize, { passive: true });
+
+        function accentRgb() {
+          return getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '108, 229, 198';
+        }
+
+        function tick() {
+          t += 0.012 + audioPulse * 0.025;
+          ctx.clearRect(0, 0, w, h);
+
+          const rgb = accentRgb();
+          const waves = 3;
+          for (let j = 0; j < waves; j++) {
+            ctx.beginPath();
+            const baseY = h * (0.28 + j * 0.24);
+            const amp = (14 + j * 9) * (1 + audioPulse * 1.4);
+            for (let x = 0; x <= w; x += 24) {
+              const nx = x / w;
+              const dist = Math.hypot(nx - pointerX, (baseY / h) - pointerY);
+              const pull = Math.max(0, 1 - dist * 2.4) * 26;
+              const y = baseY + Math.sin(nx * 5.2 + t * (1 + j * 0.25) + j) * amp + Math.cos(nx * 11 - t * 0.8) * (amp * 0.32) - pull;
+              if (x === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = j === 0
+              ? `rgba(${rgb}, ${0.14 + audioPulse * 0.16})`
+              : j === 1
+                ? `rgba(24, 160, 251, ${0.09 + audioPulse * 0.12})`
+                : `rgba(255, 140, 26, ${0.06 + audioPulse * 0.08})`;
+            ctx.lineWidth = 1.15;
+            ctx.stroke();
+          }
+
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      })();
+    </script>
+  </body>
+</html>

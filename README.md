@@ -1,72 +1,108 @@
 <p align="center"><img src="docs/assets/yin-icon.png" width="112" alt="Logo de Yin Control"></p>
-<h1 align="center">Yin Control</h1>
-<p align="center">El motor detrás del sonido.</p>
-<p align="center"><b>Android 12+ · ARM64 · Java · FFmpegKit · Root / LSPosed</b></p>
-<p align="center"><a href="https://github.com/zXer0z/Yang-Player">Conoce Yang Player</a> · <a href="#compilar">Compilar</a> · <a href="docs/yin-dsp.md">Procesamiento de audio</a></p>
+<h1 align="center">Yin Control · v3.4.0-yin</h1>
+<p align="center">Consola hardware DSP y motor de audio root para Yang Player.</p>
+<p align="center"><b>Android 12+ · ARM64 · Java 17 · FFmpegKit f64 · Root / LSPosed · LG V60 ThinQ</b></p>
+<p align="center">
+  <a href="https://zxer0z.github.io/Yin-Control/">Web Showcase (Astro)</a> ·
+  <a href="https://github.com/zXer0z/Yang-Player">Yang Player</a> ·
+  <a href="#compilar">Compilar</a> ·
+  <a href="docs/yin-dsp.md">Arquitectura DSP</a>
+</p>
 
-Yin es el motor de audio complementario de **[Yang Player](https://github.com/zXer0z/Yang-Player)**. Recibe PCM mediante un puente autenticado, procesa el sonido y administra su salida. Yang mantiene la biblioteca y la interfaz; Yin concentra los controles avanzados y la integración de audio específica del dispositivo.
+**Yin Control** (`local.v60.player`) es el motor de audio root y consola DSP/DAC complementaria de **[Yang Player](https://github.com/zXer0z/Yang-Player)**. Recibe PCM sin pérdida a través de un puente autenticado por firma SHA-256 + Binder + Unix socket, ejecuta una cadena FFmpeg `f64` en tiempo real y entrega la salida directa (`PCM DIRECT`, LG V60 ESS Quad DAC, USB DAC o Bluetooth A2DP LDAC 96 kHz).
 
-## Así se ve
+## Consola estilo DJ Mixer (v3.4.0-yin)
 
-Capturas reales del panel.
+Rediseñada con estética de mesa de mezclas profesional: chasis negro OLED, **puente de vúmetros LED de 28 segmentos** en cabecera (`Verde → Ámbar → Rojo`), chips de estado hardware en vivo (`ROOT`, `DIRECT`, `BT · LDAC`, `kHz / bits`), **pantallas OLED empotradas**, **pads `SOUND COLOR FX` de 1 toque** y **faders lineales verticales/horizontales** sin perillas incómodas.
 
-<table><tr><th>Sonido</th><th>Ruta de audio</th><th>Configuración</th></tr>
-<tr><td><img src="docs/screenshots/sound.png" width="240" alt="Panel de sonido de Yin"></td><td><img src="docs/screenshots/route.png" width="240" alt="Ruta de audio en Yin"></td><td><img src="docs/screenshots/configuration.png" width="240" alt="Configuración de Yin"></td></tr></table>
+Capturas reales tomadas en **LG V60 ThinQ** con **Yang Player** reproduciendo por **LDAC 96 kHz / 24-bit DIRECT**:
 
-## Qué incluye
+<table>
+  <tr>
+    <th>SALIDA · Ruta &amp; LDAC</th>
+    <th>EQ · Curva RBJ + Faders</th>
+    <th>DINÁMICA · Sound Color FX</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/sound.png" width="240" alt="Pestaña Salida en Yin Control"></td>
+    <td><img src="docs/screenshots/eq.png" width="240" alt="Consola EQ de 10 bandas en Yin Control"></td>
+    <td><img src="docs/screenshots/dynamics.png" width="240" alt="Sound Color FX y Dinámica en Yin Control"></td>
+  </tr>
+  <tr>
+    <th>ESPACIO · Binaural &amp; Haas</th>
+    <th>RUTA · Telemetría AudioFlinger</th>
+    <th>SISTEMA · Chasis &amp; Root</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/space.png" width="240" alt="Differential Surround y Cure Tech+ en Yin Control"></td>
+    <td><img src="docs/screenshots/route.png" width="240" alt="Telemetría de Ruta y HAL en Yin Control"></td>
+    <td><img src="docs/screenshots/configuration.png" width="240" alt="Temas OLED y diagnóstico root en Yin Control"></td>
+  </tr>
+</table>
 
-- Perfiles por conexión y selección opcional por dispositivo reconocido.
-- EQ gráfico y paramétrico de diez bandas, con ganancia, frecuencia, Q y destino por canal.
-- Preamplificador, control de margen y picos, remuestreo y tamaño del búfer.
-- Importación local de correcciones AutoEQ/Equalizer APO y convolución mediante WAV/IRS compatibles.
-- Graves dinámicos, compresor, crossfeed, espacio estéreo y ajustes tonales.
-- Cadena de efectos ordenable, controles de canales y medidores PCM de entrada/salida.
-- Pantallas de Sonido, Ruta y Configuración; personalización de apariencia y supervisor opcional para el servicio.
-- Un puente que verifica el certificado de Yang antes de aceptar la sesión de audio.
+## Qué incluye v3.4.0-yin
 
-Los controles documentados corresponden al código actual; los efectos dependen de la ruta y del formato. Las etapas que no son compatibles se omiten o se indican en el panel. La documentación de [DSP](docs/yin-dsp.md) explica el orden y los límites.
+- **Navegación directa en 6 pestañas hardware:** `SALIDA`, `EQ`, `DINÁMICA`, `ESPACIO`, `RUTA` y `SISTEMA`.
+- **Perfiles independientes por conexión + Auto-Perfil por dispositivo (SHA-256):** Altavoz, Jack/AUX, Bluetooth y USB DAC.
+- **Equalizador gráfico/paramétrico de 10 bandas (`f64`):** Curva analítica RBJ interactiva en tiempo real, 10 faders verticales lineales (`GainFader`), editor paramétrico (`20–20 000 Hz`, `Q 0.1–12.0`, `PK / LS / HS`, canal `L / R / Ambos`) e importación local **AutoEQ / Equalizer APO**.
+- **Convolver IR (FIR particionado):** Carga local de archivos `.wav` / `.irs` (hasta `2 s`, `16 MB`, `384 kHz`) con mezcla seca/húmeda y ganancia independientes.
+- **`SOUND COLOR FX` (6 pads maestros de 1 toque):** `PURE HI-FI`, `BASS CLUB`, `VOCAL STUDIO`, `3D STAGE`, `TUBE WARMTH` y `NIGHT LOUNGE`.
+- **Dinámica calibrada y calidez analógica:**
+  - **Graves y Sub-Woofer:** modos `Natural`, `Sub-Woofer` (`asubboost`) y `Dinámico` adaptativo (`adynamicequalizer`), `40–160 Hz`, `+1..+12 dB`.
+  - **Claridad y Detalle:** modos `Armónico` (`crystalizer`), `Presencia` y `Híbrido`.
+  - **Compresor RMS** (`Suave 2:1`, `Estudio 3:1`, `Noche 6:1` o manual) + **Limitador de picos digitales** (`-12..-1 dBFS`).
+  - **Calidez Analógica:** saturación soft-clip (`tanh` válvula, `atan` cinta, `cubic` clase A) con oversampling `2×`.
+- **Laboratorio Espacial ViPER-grade (auriculares):**
+  - **Protección Auditiva Binaural (Crossfeed Cure Tech+):** presets `Leve` (`700 Hz · 45%`), `Medio` (`700 Hz · 60%`), `Fuerte` (`650 Hz · 95%`) o ajuste fino para eliminar la fatiga auditiva en auriculares.
+  - **Differential Surround (Efecto Haas):** retardo interaural `1–25 ms`, inversión de canal retardado (`Reverse L↔R`), mezcla `Wet/Dry 10–100%` y filtro pasa-bajos (`1.5–16 kHz`) que proyecta el sonido fuera de la cabeza.
+  - **Panorama Magvel (`Balance L/R`)** + **Escena Estéreo Mid/Side** + **Calibración milimétrica por oído** (`±dB` y micro-retardo `0–20 ms` L/R).
+- **Control hardware LG V60 & Root:** Ganancia del **ESS Sabre Quad DAC** (`Normal`, `Alta Impedancia`, `AUX`), selector root de códec Bluetooth A2DP (`LDAC 96 kHz`, `aptX Adaptive`, `aptX`, `SBC`), hook **LSPosed Direct** y supervisor opcional en `service.d` (Magisk) sin wakelock permanente.
+- **Telemetría real en `RUTA`:** Seguimiento extremo a extremo desde el archivo en Yang hasta el socket PCM, AudioTrack (`FLAGS 0x1 · DIRECT`), `dumpsys media.audio_flinger` y `/proc/asound/.../hw_params`.
+
+## Web Showcase Interactivo (`website/`)
+
+Este repositorio incluye en [`website/`](website/) una landing page interactiva construida con **Astro** que reproduce la estética OLED/DJM de Yin Control e incluye un simulador en navegador (curva RBJ en Canvas, pads Sound Color FX, faders arrastrables, radar Haas/Binaural y sintetizador Web Audio API).
+
+```powershell
+cd website
+npm install
+npm run dev
+```
 
 ## Compatibilidad
 
-El desarrollo se centra en **LG V60 ThinQ**, ARM64 y ROM stock. El APK requiere Android 12 o posterior. Las funciones root y los hooks de LSPosed son específicas de la ROM y del hardware: instalar el APK en otro teléfono no implica disponer del mismo DAC, de las mismas rutas o de los mismos controles.
+El desarrollo está centrado en **LG V60 ThinQ** (ARM64, Android 12+). Las funciones root (`Su` / Magisk) y hooks LSPosed (`DirectModule`) dependen de la ROM/hardware del dispositivo: instalar el APK en otros teléfonos no garantiza las mismas rutas ALSA/HAL ni control directo del Quad DAC.
 
-Yin es un servicio Android con procesamiento propio; no se presenta como un controlador universal de DAC ni como prueba de reproducción bit-perfect. Los medidores PCM no miden presión sonora. Si Yang espera a Yin, conserva esa espera en lugar de pasar automáticamente a una salida sin sus efectos.
+Yin valida el certificado de Yang Player (`YANG_CERT_SHA256`) antes de abrir sesiones PCM. Los medidores de tablero miden niveles PCM digitales (`dBFS`), no presión sonora (`dB SPL`).
 
 ## Compilar
 
-Este repositorio incluye su código nativo, el contrato del puente y las dependencias de compilación. No necesita la carpeta original `MP3_player` ni una copia vecina de Yang.
-
-**Requisitos:** JDK 17, Android SDK 36, Build Tools 36.0.0 y NDK r27c (`27.2.12479018`). Configura `JAVA_HOME` y `ANDROID_HOME`, o un `local.properties` propio con la ruta del SDK.
+**Requisitos:** JDK 17, Android SDK 36, Build Tools 36.0.0 y NDK r27c (`27.2.12479018`). Configura `JAVA_HOME` y `ANDROID_HOME` o un `local.properties` con `sdk.dir`.
 
 ```powershell
 git clone https://github.com/zXer0z/Yin-Control.git
 cd Yin-Control
 ./tools/Prepare-DebugSigning.ps1
-# Si no tienes el NDK instalado en el SDK:
+# Si no tienes el NDK r27c instalado en el SDK:
 ./tools/Fetch-Ndk.ps1
 ./gradlew.bat :app:assembleRelease --console=plain
 ```
 
-APK: `app/build/outputs/apk/release/app-release.apk`. Se incluye `gradlew` para Unix y se admite un NDK existente con `-PndkPath=RUTA_AL_NDK`.
+APK resultante: `app/build/outputs/apk/release/app-release.apk`. Puedes apuntar a un NDK existente con `-PndkPath=RUTA_AL_NDK`.
 
-Los builds públicos de desarrollo usan el keystore estándar de Android de tu equipo, preparado por el script si falta. No se incluyen claves privadas. Compila Yang y Yin con ese mismo keystore para que sus huellas predeterminadas coincidan. Con firmas diferentes, configura `-PyangCertSha256=HUELLA_SHA256_DE_YANG` al compilar Yin y `-PyinCertSha256=HUELLA_SHA256_DE_YIN` al compilar Yang. Los certificados se comprueban en ambas direcciones; instalar un build con otra firma no actualiza automáticamente un APK ya instalado con distinta clave.
+Los builds públicos usan `~/.android/debug.keystore`. Compila **Yang Player** y **Yin Control** con el mismo keystore (o pasa `-PyangCertSha256=...` y `-PyinCertSha256=...` con las huellas SHA-256 correspondientes) para habilitar el puente autenticado.
 
-Para utilizar las funciones privilegiadas se necesita el entorno root/LSPosed compatible y la configuración correspondiente en el teléfono. La instalación de esas herramientas queda fuera de este repositorio.
+## Estructura del repositorio
 
-## Estructura
-
-| Pieza | Responsabilidad |
+| Ruta | Responsabilidad |
 |---|---|
-| `app/src/main/java/local/v60/player/` | Servicio, panel, DSP, salida y controles del dispositivo |
-| `app/src/main/cpp/` | Integración nativa ARM64 |
-| `shared/yin-bridge/` | Protocolo del puente con Yang |
-| `app/libs/` | Artefactos de FFmpegKit, Smart Exception y API de compilación Xposed |
-| `docs/` | DSP, ruta, límites y dependencias |
+| `app/src/main/java/local/v60/player/` | Consola DJM (`MainActivity`, `YinUi`, `MixerFaderView`, `YinIcons`), DSP, servicio y control root/HAL |
+| `app/src/main/cpp/` | Biblioteca nativa JNI (`direct.c`) ARM64 con páginas flexibles |
+| `shared/yin-bridge/` | Contrato Binder + protocolo IPC entre Yang Player y Yin Control |
+| `app/libs/` | `ffmpeg-kit-audio-8.1.7.aar`, `smart-exception` y API compileOnly de Xposed |
+| `website/` | Web showcase oficial en Astro con simulador interactivo de consola |
+| `docs/` | Documentación de [DSP](docs/yin-dsp.md), [Ruta](docs/yin-route.md), [Límites V60](docs/yin-device-limits.md) y [Puente](docs/yin-bridge.md) |
 
-[DSP y controles](docs/yin-dsp.md) · [Ruta de audio](docs/yin-route.md) · [Límites por dispositivo](docs/yin-device-limits.md) · [Puente con Yang](docs/yin-bridge.md).
+## Dependencias y licencias
 
-## Dependencias y avisos
-
-FFmpegKit Audio 8.1.7 y Smart Exception 0.2.1 conservan las licencias y avisos de sus proyectos. La API de Xposed es solo de compilación y no se empaqueta. Consulta [THIRD_PARTY.md](docs/THIRD_PARTY.md), [las huellas SHA-256](docs/dependency-sha256.json) y [los avisos del APK](app/src/main/assets/licenses).
-
-Se incluyen los artefactos de desarrollo para reproducir la construcción, con sus proyectos de origen documentados. No se publican firmware, bibliotecas propietarias del teléfono, claves de firma ni datos personales del dispositivo. Las comprobaciones funcionales y de escucha se realizan manualmente en el teléfono.
+FFmpegKit Audio 8.1.7 y Smart Exception 0.2.1 conservan las licencias y avisos de sus proyectos. La API de Xposed se utiliza únicamente en compilación (`compileOnly`). Consulta [THIRD_PARTY.md](docs/THIRD_PARTY.md), [las huellas SHA-256](docs/dependency-sha256.json) y [los avisos del APK](app/src/main/assets/licenses).

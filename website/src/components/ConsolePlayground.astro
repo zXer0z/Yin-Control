@@ -1,0 +1,517 @@
+---
+import { ACCENT_THEMES, BAND_LABELS, BANDS, SOUND_COLOR_PRESETS } from '../scripts/yinEngine.js';
+
+const themes = Object.entries(ACCENT_THEMES);
+---
+<section class="section" id="consola">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-kicker">01 // CONSOLA MIXER INTERACTIVA</div>
+      <h2 class="section-title">Cero perillas. Precisión lineal de estudio.</h2>
+      <p class="section-desc">
+        Toca un pad de <strong>Sound Color FX</strong>, arrastra los 10 faders verticales o cambia el color OLED del chasis.
+        Activa la demo de audio para escuchar en tiempo real los filtros biquad RBJ, preamplificador, retardo Haas y crossfeed en tu navegador.
+      </p>
+    </div>
+
+    <div class="hw-rack reveal" style="margin-bottom: 1.25rem;">
+      <div class="rack-head" style="margin-bottom: 0.2rem;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
+          <button id="console-audio-btn" class="btn-led" type="button">
+            ▶ ACTIVAR AUDIO EN VIVO
+          </button>
+          <span class="rack-sub">
+            Síntesis Web Audio local para probar curvas y escena · En Android el motor ejecuta FFmpeg f64
+          </span>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;" id="theme-switcher">
+          <span class="rack-sub" style="margin-right: 0.25rem;">ACENTO OLED:</span>
+          {themes.map(([key, item]) => (
+            <button
+              class={`led-chip ${key === 'menta' ? 'active' : ''}`}
+              type="button"
+              data-theme={key}
+              style={`cursor: pointer; border-color: ${key === 'menta' ? item.hex : 'var(--oled-border)'};`}
+            >
+              <span class="led-dot" style={`--dot-color: ${item.hex}`}></span>
+              {item.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="console-top-grid">
+      <!-- Left Rack: SOUND COLOR FX + Preamp -->
+      <div class="hw-rack reveal">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag">01 // SOUND COLOR FX</div>
+            <h3 class="rack-title">Perfiles maestros de 1 toque</h3>
+          </div>
+          <button id="eq-reset-btn" class="btn-hw" type="button" style="padding: 0.42rem 0.75rem; font-size: 0.72rem;">
+            ↺ PLANO 0 dB
+          </button>
+        </div>
+
+        <div class="oled-screen" style="margin-bottom: 0.9rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+            <span class="oled-kicker">ESTADO SOUND COLOR FX</span>
+            <span class="oled-kicker" id="oled-preset-badge" style="color: var(--accent)">PRESET ACTIVO</span>
+          </div>
+          <div class="oled-value" id="oled-preset-name" style="font-size: 1.15rem; margin: 0.25rem 0 0.2rem;">
+            3D STAGE
+          </div>
+          <div class="oled-kicker" id="oled-preset-desc" style="text-transform: none; letter-spacing: 0.02em; color: var(--sub); font-size: 0.74rem;">
+            Differential Surround Haas + escena estéreo abierta
+          </div>
+        </div>
+
+        <div class="pad-grid" id="sound-color-pads">
+          {SOUND_COLOR_PRESETS.map((p) => (
+            <button
+              class={`pad-key ${p.id === 'stage' ? 'active' : ''}`}
+              type="button"
+              data-preset={p.id}
+              style={`--pad-color: ${p.color}`}
+            >
+              <span class="pad-title">{p.name}</span>
+              <span class="pad-meta">{p.meta}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style="margin-top: 1.15rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;">
+              Preamplificador maestro
+            </span>
+            <span class="oled-screen" id="preamp-readout" style="padding: 0.22rem 0.55rem; font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700; color: var(--accent);">
+              -2 dB
+            </span>
+          </div>
+          <input id="preamp-slider" class="lin-range" type="range" min="-12" max="12" step="1" value="-2" aria-label="Preamplificador" />
+          <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted);">
+            <span>-12 dB (MARGEN)</span>
+            <span>0 dB</span>
+            <span>+12 dB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Rack: RBJ Curve OLED Screen -->
+      <div class="hw-rack reveal" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag">02 // ECUALIZADOR ANALÍTICO RBJ</div>
+            <h3 class="rack-title">Respuesta en frecuencia 20 Hz – 20 kHz</h3>
+          </div>
+          <div class="oled-screen" style="padding: 0.35rem 0.75rem;">
+            <span class="oled-value" id="eq-band-oled" style="font-size: 0.75rem; color: var(--accent);">
+              B6 · 1k Hz · +1.0 dB
+            </span>
+          </div>
+        </div>
+
+        <div class="curve-canvas-wrap">
+          <canvas id="rbj-canvas" class="hw-canvas" width="640" height="270"></canvas>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted);">
+          <span>ARRASTRA PUNTOS EN LA CURVA O LOS FADERS INFERIORES</span>
+          <span style="color: var(--sub);">PRECISIÓN FFMPEG f64 · Q = 1.414</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom 10-Band Pioneer Vertical Fader Deck -->
+    <div class="hw-rack reveal">
+      <div class="rack-head">
+        <div>
+          <div class="rack-tag">03 // BANCO DE 10 FADERS LINEALES (GAIN FADER)</div>
+          <h3 class="rack-title">Ecualizador gráfico de consola · ±12 dB</h3>
+        </div>
+        <span class="rack-sub" id="eq-active-summary">EQ ENCENDIDO · 10 BANDAS</span>
+      </div>
+
+      <div class="fader-bank" id="fader-bank">
+        {BANDS.map((hz, i) => (
+          <div class="v-fader-col" data-band={i}>
+            <div class="v-fader-val" id={`fader-val-${i}`}>+0</div>
+            <div class="v-fader-track" data-track={i} role="slider" aria-label={`Banda ${BAND_LABELS[i]} Hz`} aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0" tabindex="0">
+              <div class="v-fader-ticks"></div>
+              <div class="v-fader-slot">
+                <div class="v-fader-zero"></div>
+                <div class="v-fader-fill" id={`fader-fill-${i}`}></div>
+              </div>
+              <div class="v-fader-cap" id={`fader-cap-${i}`}></div>
+            </div>
+            <div class="v-fader-hz">{BAND_LABELS[i]}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    ACCENT_THEMES,
+    BAND_LABELS,
+    BANDS,
+    SOUND_COLOR_PRESETS,
+    applySoundColor,
+    consoleState,
+    emitState,
+    evaluateRbjDb,
+    setTheme,
+    subscribeState,
+    toggleDemoAudio,
+  } from '../scripts/yinEngine.js';
+
+  const pads = document.querySelectorAll('#sound-color-pads button');
+  const oledName = document.getElementById('oled-preset-name');
+  const oledBadge = document.getElementById('oled-preset-badge');
+  const oledDesc = document.getElementById('oled-preset-desc');
+  const preampSlider = document.getElementById('preamp-slider');
+  const preampReadout = document.getElementById('preamp-readout');
+  const eqBandOled = document.getElementById('eq-band-oled');
+  const eqSummary = document.getElementById('eq-active-summary');
+  const consoleAudioBtn = document.getElementById('console-audio-btn');
+  const resetBtn = document.getElementById('eq-reset-btn');
+  const themeBtns = document.querySelectorAll('#theme-switcher button');
+  const rbjCanvas = document.getElementById('rbj-canvas');
+
+  themeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-theme') || 'menta';
+      setTheme(key);
+      themeBtns.forEach((b) => {
+        const k = b.getAttribute('data-theme') || 'menta';
+        b.style.borderColor = k === key ? ACCENT_THEMES[k].hex : 'var(--oled-border)';
+      });
+    });
+  });
+
+  pads.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-preset');
+      if (id) applySoundColor(id);
+    });
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    consoleState.gains = new Array(10).fill(0);
+    consoleState.eqEnabled = true;
+    consoleState.presetId = 'custom';
+    emitState('eq');
+  });
+
+  preampSlider?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    consoleState.preamp = val;
+    consoleState.presetId = 'custom';
+    emitState('preamp');
+  });
+
+  consoleAudioBtn?.addEventListener('click', () => toggleDemoAudio());
+
+  // Vertical Fader pointer dragging
+  const cols = document.querySelectorAll('#fader-bank .v-fader-col');
+  cols.forEach((col) => {
+    const band = Number(col.getAttribute('data-band'));
+    const track = col.querySelector('.v-fader-track');
+    if (!track) return;
+
+    const updateFromClientY = (clientY) => {
+      const rect = track.getBoundingClientRect();
+      const pad = 14;
+      const usable = Math.max(20, rect.height - pad * 2);
+      const ratio = Math.max(0, Math.min(1, (clientY - (rect.top + pad)) / usable));
+      const db = Math.round(12 - ratio * 24);
+      consoleState.gains[band] = db;
+      consoleState.eqEnabled = true;
+      consoleState.selectedBand = band;
+      consoleState.presetId = 'custom';
+      emitState('eq');
+    };
+
+    let active = false;
+    track.addEventListener('pointerdown', (e) => {
+      active = true;
+      col.classList.add('dragging');
+      track.setPointerCapture(e.pointerId);
+      updateFromClientY(e.clientY);
+    });
+    track.addEventListener('pointermove', (e) => {
+      if (active) updateFromClientY(e.clientY);
+    });
+    const endDrag = () => {
+      active = false;
+      col.classList.remove('dragging');
+    };
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        consoleState.gains[band] = Math.min(12, consoleState.gains[band] + 1);
+        consoleState.selectedBand = band;
+        consoleState.presetId = 'custom';
+        emitState('eq');
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        consoleState.gains[band] = Math.max(-12, consoleState.gains[band] - 1);
+        consoleState.selectedBand = band;
+        consoleState.presetId = 'custom';
+        emitState('eq');
+      }
+    });
+  });
+
+  // Canvas RBJ curve interaction
+  function freqToX(f, padL, w) {
+    return padL + (Math.log(Math.max(20, Math.min(20000, f)) / 20) / Math.log(1000)) * w;
+  }
+
+  let canvasDraggingBand = -1;
+  if (rbjCanvas) {
+    rbjCanvas.addEventListener('pointerdown', (e) => {
+      const rect = rbjCanvas.getBoundingClientRect();
+      const px = ((e.clientX - rect.left) / rect.width) * rbjCanvas.width;
+      const py = ((e.clientY - rect.top) / rect.height) * rbjCanvas.height;
+      const padL = 34, padR = 14, padT = 18, padB = 26;
+      const cw = rbjCanvas.width - padL - padR;
+      const ch = rbjCanvas.height - padT - padB;
+
+      let best = -1, bestDist = 36;
+      for (let i = 0; i < 10; i++) {
+        const bx = freqToX(BANDS[i], padL, cw);
+        const by = padT + (1 - (consoleState.gains[i] + 12) / 24) * ch;
+        const dist = Math.hypot(px - bx, py - by);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      }
+      if (best >= 0) {
+        canvasDraggingBand = best;
+        consoleState.selectedBand = best;
+        rbjCanvas.setPointerCapture(e.pointerId);
+        drawRbjCurve();
+      }
+    });
+
+    rbjCanvas.addEventListener('pointermove', (e) => {
+      if (canvasDraggingBand < 0) return;
+      const rect = rbjCanvas.getBoundingClientRect();
+      const py = ((e.clientY - rect.top) / rect.height) * rbjCanvas.height;
+      const padT = 18, padB = 26;
+      const ch = rbjCanvas.height - padT - padB;
+      const norm = Math.max(0, Math.min(1, (py - padT) / ch));
+      const db = Math.round(12 - norm * 24);
+      consoleState.gains[canvasDraggingBand] = db;
+      consoleState.eqEnabled = true;
+      consoleState.presetId = 'custom';
+      emitState('eq');
+    });
+
+    const stopCanvasDrag = () => { canvasDraggingBand = -1; };
+    rbjCanvas.addEventListener('pointerup', stopCanvasDrag);
+    rbjCanvas.addEventListener('pointercancel', stopCanvasDrag);
+  }
+
+  function drawRbjCurve() {
+    if (!rbjCanvas) return;
+    const c = rbjCanvas.getContext('2d');
+    if (!c) return;
+
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6ce5c6';
+    const accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '108, 229, 198';
+
+    const W = rbjCanvas.width;
+    const H = rbjCanvas.height;
+    const padL = 34, padR = 14, padT = 18, padB = 26;
+    const cw = W - padL - padR;
+    const ch = H - padT - padB;
+    const midY = padT + ch * 0.5;
+
+    c.clearRect(0, 0, W, H);
+
+    // Grid lines (-12, -6, 0, +6, +12 dB)
+    c.font = '600 11px "JetBrains Mono Variable", monospace';
+    c.textBaseline = 'middle';
+    [-12, -6, 0, 6, 12].forEach((db) => {
+      const y = padT + (1 - (db + 12) / 24) * ch;
+      c.strokeStyle = db === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)';
+      c.lineWidth = db === 0 ? 1.4 : 1;
+      c.beginPath();
+      c.moveTo(padL, y);
+      c.lineTo(W - padR, y);
+      c.stroke();
+
+      c.fillStyle = db === 0 ? '#9cb0bf' : '#607282';
+      c.textAlign = 'right';
+      if (db === 12 || db === 0 || db === -12) {
+        c.fillText((db > 0 ? '+' : '') + db, padL - 7, y);
+      }
+    });
+
+    // Vertical Hz markers
+    [31, 125, 1000, 4000, 16000].forEach((f, idx) => {
+      const x = freqToX(f, padL, cw);
+      c.strokeStyle = 'rgba(255,255,255,0.06)';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(x, padT);
+      c.lineTo(x, H - padB);
+      c.stroke();
+
+      c.fillStyle = '#607282';
+      c.textAlign = 'center';
+      c.textBaseline = 'top';
+      const label = f >= 1000 ? `${f / 1000}k` : `${f}`;
+      c.fillText(label, x, H - padB + 7);
+    });
+
+    // Analytical RBJ Curve
+    const activeGains = consoleState.eqEnabled ? consoleState.gains : new Array(10).fill(0);
+    const pts = [];
+    const steps = 160;
+    for (let i = 0; i <= steps; i++) {
+      const ratio = i / steps;
+      const hz = 20 * Math.pow(1000, ratio);
+      const db = evaluateRbjDb(hz, activeGains);
+      const x = padL + ratio * cw;
+      const y = padT + (1 - (Math.max(-12, Math.min(12, db)) + 12) / 24) * ch;
+      pts.push([x, y]);
+    }
+
+    // Fill gradient under/over 0 dB line
+    const grad = c.createLinearGradient(0, padT, 0, H - padB);
+    grad.addColorStop(0, `rgba(${accentRgb}, 0.34)`);
+    grad.addColorStop(0.5, `rgba(${accentRgb}, 0.05)`);
+    grad.addColorStop(1, `rgba(${accentRgb}, 0.25)`);
+
+    c.beginPath();
+    c.moveTo(pts[0][0], midY);
+    pts.forEach(([x, y]) => c.lineTo(x, y));
+    c.lineTo(pts[pts.length - 1][0], midY);
+    c.closePath();
+    c.fillStyle = grad;
+    c.fill();
+
+    // Glowing RBJ stroke
+    c.beginPath();
+    pts.forEach(([x, y], idx) => (idx === 0 ? c.moveTo(x, y) : c.lineTo(x, y)));
+    c.strokeStyle = consoleState.eqEnabled ? accent : '#607282';
+    c.lineWidth = 2.6;
+    c.shadowColor = `rgba(${accentRgb}, 0.65)`;
+    c.shadowBlur = 12;
+    c.stroke();
+    c.shadowBlur = 0;
+
+    // Band control handles
+    BANDS.forEach((hz, i) => {
+      const bx = freqToX(hz, padL, cw);
+      const g = consoleState.eqEnabled ? consoleState.gains[i] : 0;
+      const by = padT + (1 - (g + 12) / 24) * ch;
+      const selected = i === consoleState.selectedBand;
+
+      if (selected) {
+        c.beginPath();
+        c.arc(bx, by, 10, 0, Math.PI * 2);
+        c.fillStyle = `rgba(${accentRgb}, 0.24)`;
+        c.fill();
+      }
+      c.beginPath();
+      c.arc(bx, by, selected ? 5.2 : 3.6, 0, Math.PI * 2);
+      c.fillStyle = selected ? '#ffffff' : accent;
+      c.fill();
+      c.strokeStyle = '#04070b';
+      c.lineWidth = 1.6;
+      c.stroke();
+    });
+  }
+
+  function renderConsoleUi() {
+    // Sound Color Pads & OLED
+    const matchedPreset = SOUND_COLOR_PRESETS.find((p) => p.id === consoleState.presetId);
+    pads.forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-preset') === consoleState.presetId);
+    });
+
+    if (oledName && oledBadge && oledDesc) {
+      if (matchedPreset) {
+        oledName.textContent = matchedPreset.name;
+        oledBadge.textContent = 'PRESET ACTIVO';
+        oledBadge.style.color = matchedPreset.color;
+        oledDesc.textContent = matchedPreset.desc;
+      } else {
+        oledName.textContent = 'PERSONALIZADO';
+        oledBadge.textContent = 'CUSTOM';
+        oledBadge.style.color = 'var(--accent)';
+        const bits = [];
+        if (consoleState.eqEnabled) bits.push('EQ 10B');
+        if (consoleState.bass) bits.push('Sub-Woofer');
+        if (consoleState.crossfeed) bits.push('Cure');
+        if (consoleState.surround) bits.push(`Haas ${consoleState.delay}ms`);
+        oledDesc.textContent = bits.length ? bits.join(' · ') : 'Ajuste manual en consola';
+      }
+    }
+
+    // Preamp
+    if (preampSlider) preampSlider.value = String(consoleState.preamp);
+    if (preampReadout) {
+      preampReadout.textContent = `${consoleState.preamp > 0 ? '+' : ''}${consoleState.preamp} dB`;
+    }
+
+    // 10 Faders
+    for (let i = 0; i < 10; i++) {
+      const g = consoleState.gains[i];
+      const valEl = document.getElementById(`fader-val-${i}`);
+      const capEl = document.getElementById(`fader-cap-${i}`);
+      const fillEl = document.getElementById(`fader-fill-${i}`);
+      const colEl = cols[i];
+      const trackEl = colEl?.querySelector('.v-fader-track');
+
+      if (valEl) valEl.textContent = g > 0 ? `+${g}` : `${g}`;
+      colEl?.classList.toggle('boosted', Math.abs(g) > 0);
+      trackEl?.setAttribute('aria-valuenow', String(g));
+
+      // Top% in slot (0% = +12 dB, 50% = 0 dB, 100% = -12 dB)
+      const pct = ((12 - g) / 24) * 100;
+      const zeroPct = 50;
+      if (capEl) capEl.style.top = `calc(14px + (100% - 28px) * ${(pct / 100).toFixed(4)})`;
+      if (fillEl) {
+        fillEl.style.top = `${Math.min(pct, zeroPct)}%`;
+        fillEl.style.height = `${Math.abs(pct - zeroPct)}%`;
+      }
+    }
+
+    const sb = consoleState.selectedBand;
+    if (eqBandOled) {
+      const sg = consoleState.gains[sb];
+      eqBandOled.textContent = `B${sb + 1} · ${BAND_LABELS[sb]} Hz · ${sg > 0 ? '+' : ''}${sg}.0 dB`;
+    }
+
+    if (eqSummary) {
+      eqSummary.textContent = consoleState.eqEnabled
+        ? 'EQ ENCENDIDO · 10 BANDAS'
+        : 'BYPASS · CURVA PLANA';
+    }
+
+    if (consoleAudioBtn) {
+      consoleAudioBtn.classList.toggle('playing', consoleState.playing);
+      consoleAudioBtn.textContent = consoleState.playing
+        ? '■ DETENER AUDIO EN VIVO'
+        : '▶ ACTIVAR AUDIO EN VIVO';
+    }
+
+    drawRbjCurve();
+  }
+
+  subscribeState(() => renderConsoleUi());
+  renderConsoleUi();
+</script>

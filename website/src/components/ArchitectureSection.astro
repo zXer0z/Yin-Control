@@ -1,0 +1,104 @@
+<section class="section" id="arquitectura">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-kicker">04 // ARQUITECTURA DE SEÑAL</div>
+      <h2 class="section-title">De FLAC a ESS Quad DAC sin fugas locales.</h2>
+      <p class="section-desc">
+        Yin Control opera como servicio dedicado autenticado sin reemplazar archivos globales de <code>audioserver</code> ni tocar el kernel.
+        Si Yin espera reconstruir un filtro, Yang conserva la sincronía por reloj de muestras sin recaer en audio sin procesar.
+      </p>
+    </div>
+
+    <div class="pipeline-grid" style="margin-bottom: 2.4rem;">
+      <article class="hw-rack pipe-card reveal">
+        <div class="pipe-step">ETAPA 01 // ORIGEN YANG</div>
+        <h3 class="rack-title">Transporte PCM limpio</h3>
+        <ul class="pipe-list">
+          <li><strong>Yang Player</strong> decodifica FLAC, M4A, ALAC u Opus localmente.</li>
+          <li>Fuerza <code>DSP YANG: BYPASS</code> para entregar PCM sin coloración duplicada.</li>
+          <li>Envía metadatos exactos de frecuencia, bits y duración vía extras IPC.</li>
+        </ul>
+      </article>
+
+      <article class="hw-rack pipe-card reveal">
+        <div class="pipe-step">ETAPA 02 // PUENTE SHA-256</div>
+        <h3 class="rack-title">Binder + Unix Socket</h3>
+        <ul class="pipe-list">
+          <li>Verifica huella criptográfica <code>YANG_CERT_SHA256</code> antes de <code>OPEN</code>.</li>
+          <li>Socket no bloqueante con búfer acotado a ~<code>400 ms</code> y reloj por muestras reproducidas.</li>
+          <li>Comandos <code>reconfigure</code> y <code>drained</code> evitan saltos al cambiar presets.</li>
+        </ul>
+      </article>
+
+      <article class="hw-rack pipe-card reveal">
+        <div class="pipe-step">ETAPA 03 // FFMPEG F64</div>
+        <h3 class="rack-title">Grafo DSP Calibrado</h3>
+        <ul class="pipe-list">
+          <li>Remuestreo SWR / SoXR + Preamplificador con reserva automática de margen.</li>
+          <li>EQ 10B (<code>f64</code>) + Convolver IR particionado (<code>afir</code>) + Sub-Woofer + Soft-Clip 2×.</li>
+          <li>Cure Crossfeed, Differential Surround Haas y limitador de picos digitales.</li>
+        </ul>
+      </article>
+
+      <article class="hw-rack pipe-card reveal">
+        <div class="pipe-step">ETAPA 04 // SALIDA &amp; HAL</div>
+        <h3 class="rack-title">LG V60 &amp; Root</h3>
+        <ul class="pipe-list">
+          <li>Self-hook <strong>LSPosed Direct</strong> (`DirectModule` + `direct.c` NDK ARM64).</li>
+          <li>Control de ganancia física <strong>ESS ES9219 Quad DAC</strong> y códecs Bluetooth A2DP.</li>
+          <li>Auditoría bajo demanda de <code>AudioFlinger</code> y nodos <code>/proc/asound</code>.</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="build-grid" id="compilar">
+      <div class="hw-rack reveal">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag">05 // COMPILACIÓN DESDE FUENTES</div>
+            <h3 class="rack-title">Compila tu propia APK ARM64</h3>
+          </div>
+          <span class="led-chip">
+            <span class="led-dot" style="--dot-color: var(--led-green)"></span>
+            JDK 17 · SDK 36 · NDK r27c
+          </span>
+        </div>
+
+        <pre class="hw-code"><code>git clone https://github.com/zXer0z/Yin-Control.git
+cd Yin-Control
+./tools/Prepare-DebugSigning.ps1
+# Si aún no tienes Android NDK r27c instalado en el SDK:
+./tools/Fetch-Ndk.ps1
+./gradlew.bat :app:assembleRelease --console=plain</code></pre>
+
+        <p style="margin: 0.9rem 0 0; font-size: 0.87rem; color: var(--sub);">
+          Para enlazar Yang Player y Yin Control en desarrollo, compila ambos con el mismo keystore de firma
+          (<code>~/.android/debug.keystore</code>) o pasa <code>-PyangCertSha256=...</code> con la huella de Yang.
+        </p>
+      </div>
+
+      <div class="hw-rack reveal">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag">06 // LÍMITES Y COMPATIBILIDAD</div>
+            <h3 class="rack-title">Transparencia técnica</h3>
+          </div>
+        </div>
+        <div style="display: grid; gap: 0.65rem;">
+          <div class="oled-screen">
+            <div class="oled-kicker">PLATAFORMA OBJETIVO</div>
+            <div style="font-size: 0.88rem; color: var(--sub); margin-top: 0.25rem;">
+              Desarrollado específicamente para <strong style="color: var(--ink);">LG V60 ThinQ</strong> (ARM64, Android 12+, Root Magisk + LSPosed). Las rutas ALSA y el control de impedancia Quad DAC no son universales en otros teléfonos.
+            </div>
+          </div>
+          <div class="oled-screen">
+            <div class="oled-kicker">TELEMETRÍA HONESTA</div>
+            <div style="font-size: 0.88rem; color: var(--sub); margin-top: 0.25rem;">
+              Los vúmetros miden picos y RMS digitales (<strong style="color: var(--ink);">dBFS</strong>), no presión sonora (<strong style="color: var(--ink);">dB SPL</strong>). La protección binaural busca reducir fatiga espacial, sin sustituir límites físicos de volumen.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

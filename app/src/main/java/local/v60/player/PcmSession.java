@@ -35,10 +35,7 @@ final class PcmSession {
     private boolean trackPlaying;
     private Bundle source=new Bundle();
     final PcmMeter inputMeter,outputMeter;
-    private final AbComparison.Session comparison;
     private volatile float sourceVolume=1;
-    private volatile double trimDb;
-    private long matchAt;
 
     PcmSession(Context context,Bundle config,IBinder client) throws Exception {
         inputRate=config.getInt("rate");inputChannels=config.getInt("channels");inputEncoding=config.getInt("encoding");
@@ -55,7 +52,7 @@ final class PcmSession {
         int requested=settings.outputRate(inputRate,false);requestedRate=requested;requestedEncoding=settings.androidEncoding();channels=inputChannels==1?1:2;
         PcmOutput.Opened opened=PcmOutput.open(settings,requested,channels==1?AudioFormat.CHANNEL_OUT_MONO:AudioFormat.CHANNEL_OUT_STEREO);
         track=opened.track;rate=opened.rate;encoding=track.getAudioFormat();frameBytes=channels*settings.bytesPerSample();
-        inputMeter=new PcmMeter(inputRate,inputChannels,inputEncoding);outputMeter=new PcmMeter(rate,channels,encoding);comparison=new AbComparison.Session(context,settings);trimDb=comparison.trim();
+        inputMeter=new PcmMeter(inputRate,inputChannels,inputEncoding);outputMeter=new PcmMeter(rate,channels,encoding);
         ParcelFileDescriptor[] sockets=null;String in=null,out=null;ParcelFileDescriptor inFd=null,outFd=null;FFmpegSession running=null;
         try {
             sockets=ParcelFileDescriptor.createReliableSocketPair();
@@ -108,7 +105,6 @@ final class PcmSession {
         try {
             while(!cancelled){
                 if(paused){if(trackPlaying){track.pause();trackPlaying=false;}lastData=SystemClock.elapsedRealtime();SystemClock.sleep(10);continue;}
-                long now=SystemClock.elapsedRealtime();if(now-matchAt>=500){matchAt=now;comparison.observe(inputMeter,outputMeter);double target=comparison.trim();if(Math.abs(target-trimDb)>.01){trimDb+=Math.max(-1,Math.min(1,target-trimDb));applyVolume();}}
                 if(!pcm.hasRemaining()){
                     if(pipeReader.available()>0){
                         int n=pipeReader.read(bytes,carry,bytes.length-carry);if(n<0)break;
@@ -143,9 +139,9 @@ final class PcmSession {
         if(cancelled)return 0;
         try{long current=Integer.toUnsignedLong(track.getPlaybackHeadPosition());if(current<lastHead)wraps++;lastHead=current;return Math.min(submittedBytes/frameBytes,current+(wraps<<32));}catch(IllegalStateException stopped){return 0;}
     }
-    private void applyVolume(){track.setVolume((float)(sourceVolume*Math.pow(10,trimDb/20)));}
+    private void applyVolume(){track.setVolume(sourceVolume);}
     void state(boolean playing,float volume){paused=!playing;if(!playing)try{track.pause();trackPlaying=false;}catch(Exception ignored){}sourceVolume=Math.max(0,Math.min(1,volume));applyVolume();}
-    Bundle meters(){Bundle b=new Bundle();boolean active=!cancelled&&!paused&&!drained&&error.isEmpty();b.putBoolean("active",active);b.putString("profileKey",settings.storageKey);double[] input=inputMeter.recent(),output=outputMeter.recent();double volume=sourceVolume*Math.pow(10,trimDb/20);b.putDouble("before",PcmMeter.db(Math.sqrt(input[0])));b.putDouble("after",PcmMeter.db(Math.sqrt(output[0])*volume));b.putDouble("peak",PcmMeter.db(output[1]*volume));b.putBoolean("ceiling",output[1]>=.9999);b.putBoolean("signal",output[2]>0);b.putDouble("trim",trimDb);return b;}
+    Bundle meters(){Bundle b=new Bundle();boolean active=!cancelled&&!paused&&!drained&&error.isEmpty();b.putBoolean("active",active);b.putString("profileKey",settings.storageKey);double[] input=inputMeter.recent(),output=outputMeter.recent();double volume=sourceVolume;b.putDouble("before",PcmMeter.db(Math.sqrt(input[0])));b.putDouble("after",PcmMeter.db(Math.sqrt(output[0])*volume));b.putDouble("peak",PcmMeter.db(output[1]*volume));b.putBoolean("ceiling",output[1]>=.9999);b.putBoolean("signal",output[2]>0);return b;}
     synchronized void source(Bundle metadata){if(metadata!=null)source=new Bundle(metadata);}
     synchronized Bundle snapshot(){
         if(cancelled){Bundle b=new Bundle();b.putBoolean("ok",false);b.putString("session",id);b.putString("message",error);return b;}
@@ -162,7 +158,7 @@ final class PcmSession {
         b.putString("profileKey",settings.storageKey);
         b.putDouble("preampDb",settings.preamp+settings.dsp.preampFraction);
         b.putBoolean("eq",plan.equalizing);b.putBoolean("limiter",plan.limiting);b.putDouble("gainDb",plan.gainDb);b.putDouble("headroomDb",plan.headroomDb);
-        b.putString("effects",plan.effects);b.putBoolean("protection",settings.dsp.protection);b.putString("deviceProfile",settings.storageKey.equals(settings.profile)?"Por conexión":"Por dispositivo");
+        b.putString("effects",plan.effects);b.putBoolean("protection",settings.limiter);b.putString("deviceProfile",settings.storageKey.equals(settings.profile)?"Por conexión":"Por dispositivo");
         b.putString("resampler",inputRate==rate?"Sin cambio de frecuencia":settings.resampler==1?"SoXR · precisión 28":"SWR · filtro 64 taps");
         b.putString("message",error.isEmpty()?DirectOutput.describe(track,settings)+(settings.compatibilityNote.isEmpty()?"":"\n"+settings.compatibilityNote):error);
         return b;

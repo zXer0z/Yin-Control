@@ -17,7 +17,7 @@ public final class DirectModule implements IXposedHookLoadPackage {
     private static native long nativeConvertFlags(int flags,int reverse);
     private static native int nativeArmProbe(int flags);
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam p) throws Throwable {
-        try{install(p);}catch(Throwable unavailable){bridgeFailed=true;XposedBridge.log("ZeroMusic: optional PCM bridge unavailable: "+unavailable.getClass().getSimpleName());}
+        try{install(p);}catch(Throwable unavailable){bridgeFailed=true;XposedBridge.log("YinControl: optional PCM bridge unavailable: "+unavailable.getClass().getSimpleName());}
     }
     private void install(XC_LoadPackage.LoadPackageParam p)throws Throwable{
         if(!"local.v60.player".equals(p.packageName)||!"local.v60.player".equals(p.processName))return;

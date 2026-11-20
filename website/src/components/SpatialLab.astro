@@ -1,0 +1,515 @@
+<section class="section" id="espacio">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-kicker">02 // LABORATORIO ESPACIAL &amp; DINÁMICA VIPER</div>
+      <h2 class="section-title">Saca el sonido de la cabeza. Descansa el oído.</h2>
+      <p class="section-desc">
+        Dos efectos psicoacústicos inspirados en la experiencia <strong>ViPER4Android</strong> implementados nativamente sobre FFmpeg <code>f64</code>:
+        <strong>Differential Surround (Haas)</strong> para escena exterior y <strong>Protección Auditiva Binaural (Cure Tech+)</strong> para sesiones largas.
+      </p>
+    </div>
+
+    <div class="spatial-grid">
+      <!-- Left: Differential Surround Controls -->
+      <div class="hw-rack reveal">
+        <div class="rack-head">
+          <div>
+            <div class="rack-tag">01 // DIFFERENTIAL SURROUND</div>
+            <h3 class="rack-title">Efecto Haas envolvente</h3>
+          </div>
+          <button id="surround-toggle-btn" class="led-chip" type="button" style="cursor: pointer;">
+            <span class="led-dot" id="surround-dot" style="--dot-color: var(--led-blue)"></span>
+            <span id="surround-toggle-lbl">ON</span>
+          </button>
+        </div>
+
+        <div class="pad-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 0.9rem;" id="haas-presets">
+          <button class="pad-key" type="button" data-delay="2" data-mix="55" data-lp="10500" style="--pad-color: var(--led-blue)">
+            <span class="pad-title">SUTIL 2 ms</span>
+            <span class="pad-meta">10.5 kHz · 55%</span>
+          </button>
+          <button class="pad-key" type="button" data-delay="8" data-mix="75" data-lp="7500" style="--pad-color: var(--led-blue)">
+            <span class="pad-title">ESTUDIO 8 ms</span>
+            <span class="pad-meta">7.5 kHz · 75%</span>
+          </button>
+          <button class="pad-key active" type="button" data-delay="14" data-mix="85" data-lp="5500" style="--pad-color: var(--led-blue)">
+            <span class="pad-title">SALA 14 ms</span>
+            <span class="pad-meta">5.5 kHz · 85%</span>
+          </button>
+          <button class="pad-key" type="button" data-delay="20" data-mix="95" data-lp="4000" style="--pad-color: var(--led-blue)">
+            <span class="pad-title">AMPLIO 20 ms</span>
+            <span class="pad-meta">4.0 kHz · 95%</span>
+          </button>
+        </div>
+
+        <button id="reverse-toggle-btn" class="pad-key" type="button" style="width: 100%; margin-bottom: 0.9rem; --pad-color: var(--led-amber);">
+          <span class="pad-title" id="reverse-label">CANAL RETARDADO: DERECHO (R)</span>
+          <span class="pad-meta">Toca para invertir dirección espacial (Reverse L ↔ R)</span>
+        </button>
+
+        <div style="display: grid; gap: 0.65rem;">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem;">
+              <span style="color: var(--sub);">Retardo interaural (Delay)</span>
+              <span id="haas-delay-val" style="color: var(--ink); font-weight: 700;">12 ms</span>
+            </div>
+            <input id="haas-delay" class="lin-range" type="range" min="1" max="25" value="12" aria-label="Retardo interaural Haas" />
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem;">
+              <span style="color: var(--sub);">Mezcla envolvente (Wet/Dry)</span>
+              <span id="haas-mix-val" style="color: var(--ink); font-weight: 700;">80 %</span>
+            </div>
+            <input id="haas-mix" class="lin-range" type="range" min="10" max="100" value="80" aria-label="Mezcla envolvente Haas" />
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem;">
+              <span style="color: var(--sub);">Corte pasa-bajos (LP Cutoff)</span>
+              <span id="haas-lp-val" style="color: var(--ink); font-weight: 700;">7.5 kHz</span>
+            </div>
+            <input id="haas-lp" class="lin-range" type="range" min="1500" max="16000" step="100" value="7500" aria-label="Filtro LP Haas" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Live Binaural & Spatial Radar Canvas -->
+      <div class="hw-rack reveal" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="rack-head" style="margin-bottom: 0.5rem;">
+          <div>
+            <div class="rack-tag">02 // RADAR DE ESCENA ESTÉREO</div>
+            <h3 class="rack-title">Proyección binaural en vivo</h3>
+          </div>
+          <span class="oled-screen" id="radar-status-oled" style="padding: 0.28rem 0.6rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent);">
+            HAAS 12 ms
+          </span>
+        </div>
+
+        <div class="curve-canvas-wrap" style="padding: 0.5rem;">
+          <canvas id="spatial-radar" class="hw-canvas" width="420" height="330"></canvas>
+        </div>
+
+        <div class="oled-screen" style="margin-top: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <div class="oled-kicker">AMPLITUD DE ESCENA</div>
+            <div class="oled-value" id="radar-stage-metric" style="color: var(--led-cyan); font-size: 0.92rem;">EXPANDIDA 145%</div>
+          </div>
+          <div>
+            <div class="oled-kicker">CONFORT AUDITIVO</div>
+            <div class="oled-value" id="radar-cure-metric" style="color: var(--led-green); font-size: 0.92rem;">ESTÁNDAR</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Cure Tech+ Binaural & Analog Warmth -->
+      <div class="hw-rack reveal" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="rack-head">
+            <div>
+              <div class="rack-tag">03 // PROTECCIÓN BINAURAL</div>
+              <h3 class="rack-title">Crossfeed Cure Tech+</h3>
+            </div>
+            <button id="cure-toggle-btn" class="led-chip" type="button" style="cursor: pointer;">
+              <span class="led-dot" id="cure-dot" style="--dot-color: var(--led-green)"></span>
+              <span id="cure-toggle-lbl">OFF</span>
+            </button>
+          </div>
+
+          <p style="margin: 0 0 0.85rem; font-size: 0.87rem; color: var(--sub);">
+            Cada oído escucha suavemente ambos canales como con monitores frontales, eliminando la presión intracraneal de los auriculares.
+          </p>
+
+          <div class="pad-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0.9rem;" id="cure-presets">
+            <button class="pad-key" type="button" data-hz="700" data-fb="45" style="--pad-color: var(--led-green)">
+              <span class="pad-title">LEVE</span>
+              <span class="pad-meta">700Hz · 45%</span>
+            </button>
+            <button class="pad-key" type="button" data-hz="700" data-fb="60" style="--pad-color: var(--led-green)">
+              <span class="pad-title">MEDIO</span>
+              <span class="pad-meta">700Hz · 60%</span>
+            </button>
+            <button class="pad-key" type="button" data-hz="650" data-fb="95" style="--pad-color: var(--led-green)">
+              <span class="pad-title">FUERTE</span>
+              <span class="pad-meta">650Hz · 95%</span>
+            </button>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem;">
+              <span style="color: var(--sub);">Nivel de mezcla cruzada (Feedback)</span>
+              <span id="cure-fb-val" style="color: var(--ink); font-weight: 700;">60 %</span>
+            </div>
+            <input id="cure-fb" class="lin-range" type="range" min="20" max="95" value="60" aria-label="Nivel binaural Cure Tech" />
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+          <div class="rack-tag" style="margin-bottom: 0.5rem;">04 // CALIDEZ ANALÓGICA (2× OVERSAMPLE)</div>
+          <div class="pad-grid" style="grid-template-columns: repeat(3, 1fr);" id="warmth-selector">
+            <button class="pad-key active" type="button" data-warmth="0" style="--pad-color: var(--led-amber)">
+              <span class="pad-title">VÁLVULA</span>
+              <span class="pad-meta">tanh soft</span>
+            </button>
+            <button class="pad-key" type="button" data-warmth="1" style="--pad-color: var(--led-amber)">
+              <span class="pad-title">CINTA</span>
+              <span class="pad-meta">atan tape</span>
+            </button>
+            <button class="pad-key" type="button" data-warmth="2" style="--pad-color: var(--led-amber)">
+              <span class="pad-title">CLASE A</span>
+              <span class="pad-meta">cubic</span>
+            </button>
+          </div>
+          <div class="oled-screen" id="warmth-oled" style="margin-top: 0.65rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--sub);">
+            asoftclip=type=tanh:oversample=2 · armónicos pares cálidos
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { consoleState, emitState, subscribeState } from '../scripts/yinEngine.js';
+
+  const surroundToggleBtn = document.getElementById('surround-toggle-btn');
+  const surroundDot = document.getElementById('surround-dot');
+  const surroundToggleLbl = document.getElementById('surround-toggle-lbl');
+  const haasPresetBtns = document.querySelectorAll('#haas-presets button');
+  const reverseBtn = document.getElementById('reverse-toggle-btn');
+  const reverseLabel = document.getElementById('reverse-label');
+  const haasDelay = document.getElementById('haas-delay');
+  const haasMix = document.getElementById('haas-mix');
+  const haasLp = document.getElementById('haas-lp');
+  const haasDelayVal = document.getElementById('haas-delay-val');
+  const haasMixVal = document.getElementById('haas-mix-val');
+  const haasLpVal = document.getElementById('haas-lp-val');
+
+  const cureToggleBtn = document.getElementById('cure-toggle-btn');
+  const cureDot = document.getElementById('cure-dot');
+  const cureToggleLbl = document.getElementById('cure-toggle-lbl');
+  const curePresetBtns = document.querySelectorAll('#cure-presets button');
+  const cureFb = document.getElementById('cure-fb');
+  const cureFbVal = document.getElementById('cure-fb-val');
+
+  const warmthBtns = document.querySelectorAll('#warmth-selector button');
+  const warmthOled = document.getElementById('warmth-oled');
+  const radarStatusOled = document.getElementById('radar-status-oled');
+  const radarStageMetric = document.getElementById('radar-stage-metric');
+  const radarCureMetric = document.getElementById('radar-cure-metric');
+  const radarCanvas = document.getElementById('spatial-radar');
+
+  surroundToggleBtn?.addEventListener('click', () => {
+    consoleState.surround = !consoleState.surround;
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  haasPresetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      consoleState.surround = true;
+      consoleState.delay = Number(btn.getAttribute('data-delay'));
+      consoleState.surroundAmount = Number(btn.getAttribute('data-mix'));
+      consoleState.surroundLpHz = Number(btn.getAttribute('data-lp'));
+      consoleState.presetId = 'custom';
+      emitState('spatial');
+    });
+  });
+
+  reverseBtn?.addEventListener('click', () => {
+    consoleState.surround = true;
+    consoleState.surroundReverse = !consoleState.surroundReverse;
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  haasDelay?.addEventListener('input', (e) => {
+    consoleState.surround = true;
+    consoleState.delay = Number(e.target.value);
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  haasMix?.addEventListener('input', (e) => {
+    consoleState.surround = true;
+    consoleState.surroundAmount = Number(e.target.value);
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  haasLp?.addEventListener('input', (e) => {
+    consoleState.surround = true;
+    consoleState.surroundLpHz = Number(e.target.value);
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  cureToggleBtn?.addEventListener('click', () => {
+    consoleState.crossfeed = !consoleState.crossfeed;
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  curePresetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      consoleState.crossfeed = true;
+      consoleState.crossfeedHz = Number(btn.getAttribute('data-hz'));
+      consoleState.crossfeedAmount = Number(btn.getAttribute('data-fb'));
+      consoleState.presetId = 'custom';
+      emitState('spatial');
+    });
+  });
+
+  cureFb?.addEventListener('input', (e) => {
+    consoleState.crossfeed = true;
+    consoleState.crossfeedAmount = Number(e.target.value);
+    consoleState.presetId = 'custom';
+    emitState('spatial');
+  });
+
+  const WARMTH_INFO = [
+    'asoftclip=type=tanh:oversample=2 · armónicos pares cálidos de válvula',
+    'asoftclip=type=atan:oversample=2 · compresión suave de cinta analógica',
+    'asoftclip=type=cubic:oversample=2 · pegada transparente Clase A',
+  ];
+  warmthBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.getAttribute('data-warmth'));
+      consoleState.warmth = true;
+      consoleState.warmthType = idx;
+      warmthBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      if (warmthOled) warmthOled.textContent = WARMTH_INFO[idx];
+    });
+  });
+
+  function syncSpatialUi() {
+    if (surroundToggleLbl && surroundDot) {
+      surroundToggleLbl.textContent = consoleState.surround ? 'ON' : 'OFF';
+      surroundDot.style.setProperty('--dot-color', consoleState.surround ? 'var(--led-blue)' : 'var(--muted)');
+    }
+    if (reverseBtn && reverseLabel) {
+      reverseBtn.classList.toggle('active', consoleState.surroundReverse);
+      reverseLabel.textContent = consoleState.surroundReverse
+        ? 'CANAL RETARDADO: IZQUIERDO (REVERSE L)'
+        : 'CANAL RETARDADO: DERECHO (R)';
+    }
+
+    if (haasDelay) haasDelay.value = String(consoleState.delay);
+    if (haasMix) haasMix.value = String(consoleState.surroundAmount);
+    if (haasLp) haasLp.value = String(consoleState.surroundLpHz);
+    if (haasDelayVal) haasDelayVal.textContent = `${consoleState.delay} ms`;
+    if (haasMixVal) haasMixVal.textContent = `${consoleState.surroundAmount} %`;
+    if (haasLpVal) haasLpVal.textContent = `${(consoleState.surroundLpHz / 1000).toFixed(1)} kHz`;
+
+    haasPresetBtns.forEach((btn) => {
+      const match = consoleState.surround
+        && Number(btn.getAttribute('data-delay')) === consoleState.delay
+        && Number(btn.getAttribute('data-mix')) === consoleState.surroundAmount
+        && Number(btn.getAttribute('data-lp')) === consoleState.surroundLpHz;
+      btn.classList.toggle('active', match);
+    });
+
+    if (cureToggleLbl && cureDot) {
+      cureToggleLbl.textContent = consoleState.crossfeed ? 'ON' : 'OFF';
+      cureDot.style.setProperty('--dot-color', consoleState.crossfeed ? 'var(--led-green)' : 'var(--muted)');
+    }
+    if (cureFb) cureFb.value = String(consoleState.crossfeedAmount);
+    if (cureFbVal) cureFbVal.textContent = `${consoleState.crossfeedAmount} %`;
+
+    curePresetBtns.forEach((btn) => {
+      const match = consoleState.crossfeed
+        && Number(btn.getAttribute('data-hz')) === consoleState.crossfeedHz
+        && Number(btn.getAttribute('data-fb')) === consoleState.crossfeedAmount;
+      btn.classList.toggle('active', match);
+    });
+
+    if (radarStatusOled) {
+      radarStatusOled.textContent = consoleState.surround
+        ? `HAAS ${consoleState.delay} ms`
+        : consoleState.crossfeed
+          ? `CURE ${consoleState.crossfeedAmount}%`
+          : 'ESTÉREO NATIVO';
+    }
+    if (radarStageMetric) {
+      if (!consoleState.surround) {
+        radarStageMetric.textContent = consoleState.crossfeed ? 'FRONTAL CURE' : 'ESTÉREO 100%';
+      } else {
+        const exp = Math.round(115 + (consoleState.delay / 25) * 45 + (consoleState.surroundAmount / 100) * 35);
+        radarStageMetric.textContent = `EXPANDIDA ${exp}%`;
+      }
+    }
+    if (radarCureMetric) {
+      if (!consoleState.crossfeed) {
+        radarCureMetric.textContent = 'DESACTIVADO';
+        radarCureMetric.style.color = 'var(--sub)';
+      } else {
+        const tier = consoleState.crossfeedAmount >= 80
+          ? 'MÁXIMO (FUERTE)'
+          : consoleState.crossfeedAmount >= 55
+            ? 'EQUILIBRADO (MEDIO)'
+            : 'NATURAL (LEVE)';
+        radarCureMetric.textContent = tier;
+        radarCureMetric.style.color = 'var(--led-green)';
+      }
+    }
+  }
+
+  let phase = 0;
+  function drawRadar() {
+    if (radarCanvas) {
+      const ctx = radarCanvas.getContext('2d');
+      if (ctx) {
+        phase += 0.032;
+        const W = radarCanvas.width;
+        const H = radarCanvas.height;
+        const cx = W * 0.5;
+        const cy = H * 0.54;
+
+        ctx.clearRect(0, 0, W, H);
+
+        // Concentric azimuth grid rings
+        [52, 95, 138].forEach((r, idx) => {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = idx === 2 ? 'rgba(108, 229, 198, 0.14)' : 'rgba(255, 255, 255, 0.06)';
+          ctx.setLineDash(idx === 1 ? [4, 4] : []);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        // Crosshair
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 150);
+        ctx.lineTo(cx, cy + 125);
+        ctx.moveTo(cx - 165, cy);
+        ctx.lineTo(cx + 165, cy);
+        ctx.stroke();
+
+        // Differential Surround exterior wavefront arcs
+        const mix = consoleState.surround ? consoleState.surroundAmount / 100 : 0.15;
+        const reach = consoleState.surround ? 82 + (consoleState.delay / 25) * 66 : 70;
+
+        for (let k = 0; k < 2; k++) {
+          const prog = ((phase * 0.35 + k * 0.5) % 1);
+          const rr = 38 + prog * reach;
+          const alpha = (1 - prog) * (consoleState.surround ? 0.55 * mix : 0.16);
+
+          // Left emitter wave
+          ctx.beginPath();
+          ctx.arc(cx - 18, cy, rr, Math.PI * 0.65, Math.PI * 1.48);
+          ctx.strokeStyle = consoleState.surroundReverse
+            ? `rgba(255, 140, 26, ${alpha})`
+            : `rgba(24, 160, 251, ${alpha})`;
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+
+          // Right emitter wave
+          ctx.beginPath();
+          ctx.arc(cx + 18, cy, rr * (consoleState.surround ? (consoleState.surroundReverse ? 1.0 : 1.07) : 1.0), -Math.PI * 0.48, Math.PI * 0.35);
+          ctx.strokeStyle = !consoleState.surroundReverse && consoleState.surround
+            ? `rgba(255, 140, 26, ${alpha})`
+            : `rgba(24, 160, 251, ${alpha})`;
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+        }
+
+        // Virtual Speaker Frontal Arcs when Cure Crossfeed is ON
+        if (consoleState.crossfeed) {
+          const fb = consoleState.crossfeedAmount / 100;
+          const drawMonitor = (angleDeg, label) => {
+            const rad = (angleDeg * Math.PI) / 180;
+            const mx = cx + Math.sin(rad) * 116;
+            const my = cy - Math.cos(rad) * 116;
+
+            // Crossfeed coupling beams to both ears
+            ctx.strokeStyle = `rgba(63, 224, 136, ${0.18 + fb * 0.45})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(mx, my);
+            ctx.lineTo(cx - 24, cy);
+            ctx.moveTo(mx, my);
+            ctx.lineTo(cx + 24, cy);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(mx, my, 9, 0, Math.PI * 2);
+            ctx.fillStyle = '#04070b';
+            ctx.fill();
+            ctx.strokeStyle = '#3fe088';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#3fe088';
+            ctx.font = '700 10px "JetBrains Mono Variable", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, mx, my - 15);
+          };
+          drawMonitor(-32, 'MON L');
+          drawMonitor(32, 'MON R');
+        }
+
+        // Left & Right Sound Image Nodes
+        const latOffset = consoleState.surround ? 68 + (consoleState.delay / 25) * 68 : 66;
+        const leftPull = consoleState.crossfeed ? (consoleState.crossfeedAmount / 100) * 28 : 0;
+        const lx = cx - latOffset + leftPull * 0.45;
+        const ly = cy - (consoleState.crossfeed ? 46 : 8) - (consoleState.surroundReverse ? 18 : 0);
+        const rx = cx + latOffset - leftPull * 0.45;
+        const ry = cy - (consoleState.crossfeed ? 46 : 8) - (!consoleState.surroundReverse && consoleState.surround ? 18 : 0);
+
+        [
+          { x: lx, y: ly, lbl: consoleState.surroundReverse && consoleState.surround ? `L +${consoleState.delay}ms` : 'L', col: '#18a0fb' },
+          { x: rx, y: ry, lbl: !consoleState.surroundReverse && consoleState.surround ? `R +${consoleState.delay}ms` : 'R', col: consoleState.surround ? '#ff8c1a' : '#6ce5c6' },
+        ].forEach((node) => {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 13, 0, Math.PI * 2);
+          ctx.fillStyle = node.col + '33';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 6, 0, Math.PI * 2);
+          ctx.fillStyle = node.col;
+          ctx.fill();
+          ctx.fillStyle = '#f1f6f9';
+          ctx.font = '700 11px "JetBrains Mono Variable", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(node.lbl, node.x, node.y + 22);
+        });
+
+        // Listener Head silhouette in center
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 4, 22, 26, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#0c1118';
+        ctx.fill();
+        ctx.strokeStyle = '#6ce5c6';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        // Nose cue (forward direction)
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, cy - 22);
+        ctx.lineTo(cx, cy - 30);
+        ctx.lineTo(cx + 5, cy - 22);
+        ctx.closePath();
+        ctx.fillStyle = '#6ce5c6';
+        ctx.fill();
+
+        // Headphone earcups
+        [-24, 24].forEach((dx) => {
+          ctx.fillStyle = '#1d2836';
+          ctx.strokeStyle = '#6ce5c6';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.roundRect(cx + dx - 4, cy - 10, 8, 22, 4);
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
+    }
+    requestAnimationFrame(drawRadar);
+  }
+
+  subscribeState(() => syncSpatialUi());
+  syncSpatialUi();
+  requestAnimationFrame(drawRadar);
+</script>
