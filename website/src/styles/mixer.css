@@ -256,6 +256,7 @@ nav.nav a:hover {
 /* Hardware Racks & Spotlight Cards */
 .hw-rack {
   position: relative;
+  min-width: 0;
   background: linear-gradient(180deg, rgba(16, 21, 29, 0.94), rgba(10, 13, 18, 0.96));
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -319,6 +320,7 @@ nav.nav a:hover {
 /* Recessed OLED Screen Box */
 .oled-screen {
   position: relative;
+  min-width: 0;
   background: var(--oled);
   border: 1px solid var(--oled-border);
   border-radius: 12px;
@@ -827,6 +829,27 @@ section.section {
   gap: 0.55rem;
 }
 
+.pad-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.pad-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pad-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.hero-grid > *,
+.console-top-grid > *,
+.spatial-grid > *,
+.device-grid > *,
+.pipeline-grid > *,
+.build-grid > * {
+  min-width: 0;
+}
+
 .curve-canvas-wrap {
   position: relative;
   border-radius: 12px;
@@ -972,18 +995,115 @@ footer.footer {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    padding: 0.65rem 0;
+    gap: 0.6rem 0.75rem;
+  }
   nav.nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  nav.nav::-webkit-scrollbar {
     display: none;
   }
+  nav.nav a {
+    flex: none;
+    white-space: nowrap;
+    padding: 0.36rem 0.62rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .fader-bank {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.55rem 0.45rem;
+    overflow-x: visible;
+  }
+  .v-fader-track {
+    height: 158px;
+    min-width: 0;
+  }
+  .pad-grid-4,
   .pad-grid,
   .tab-selector-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .pad-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
   .pipeline-grid {
     grid-template-columns: 1fr;
   }
+  .phone-bezel {
+    width: min(305px, 100%);
+    padding: 10px;
+    border-radius: 30px;
+  }
+  .phone-screen {
+    border-radius: 20px;
+  }
   section.section {
-    padding: 3.4rem 0;
+    padding: 3.2rem 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .container {
+    width: min(1240px, calc(100% - 1.25rem));
+  }
+  .topbar-hide-sm {
+    display: none;
+  }
+  .topbar-actions .btn-led {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.72rem;
+  }
+  .hero {
+    padding: 2rem 0 2.3rem;
+  }
+  .hero-cta-row > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .hw-rack {
+    padding: 1rem;
+    border-radius: 15px;
+  }
+  .meter-row {
+    grid-template-columns: 26px 1fr 40px;
+    gap: 0.38rem;
+  }
+  .meter-leds {
+    gap: 1.5px;
+    height: 10px;
+  }
+  .orbit-telemetry {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .pad-grid-3 .pad-key {
+    padding: 0.56rem 0.48rem;
+  }
+  .pad-grid-3 .pad-title {
+    font-size: 0.66rem;
+  }
+  .pad-grid-3 .pad-meta {
+    font-size: 0.58rem;
+  }
+  .brand-sub {
+    font-size: 0.62rem;
   }
 }
