@@ -4,6 +4,7 @@
 <p align="center"><b>Android 12+ · ARM64 · Java 17 · FFmpegKit f64 · Root / LSPosed · LG V60 ThinQ</b></p>
 <p align="center">
   <a href="https://zxer0z.github.io/Yin-Control/">Web Showcase (Astro)</a> ·
+  <a href="https://github.com/zXer0z/Yin-Control/releases/latest">Descargar APK</a> ·
   <a href="https://github.com/zXer0z/Yang-Player">Yang Player</a> ·
   <a href="#compilar">Compilar</a> ·
   <a href="docs/yin-dsp.md">Arquitectura DSP</a>
